@@ -18,18 +18,13 @@ const ratingConfig: { rating: Rating; label: string; color: string; desc: string
 function FlashCard({ card, isFlipped, onFlip }: { card: Flashcard; isFlipped: boolean; onFlip: () => void }) {
   return (
     <div className="flashcard-container w-full" style={{ height: '360px' }} onClick={onFlip}>
-      <div className={`flashcard-inner w-full h-full cursor-pointer ${isFlipped ? 'flipped' : ''}`}>
+      <div className={`flashcard-inner w-full h-full cursor-pointer relative ${isFlipped ? 'flipped' : ''}`}>
         {/* Front */}
         <div className="flashcard-front absolute inset-0 bg-slate-800 border-2 border-slate-600 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-slate-500 transition-colors">
           <div className="text-slate-500 text-xs uppercase tracking-widest mb-4">Question</div>
           <p className="text-white text-xl font-medium leading-relaxed">
             {card.front.text}
           </p>
-          {card.front.formula && (
-            <div className="mt-4 bg-slate-700 rounded-lg px-4 py-2 font-mono text-blue-300 text-lg">
-              {card.front.formula}
-            </div>
-          )}
           {card.front.hint && (
             <div className="mt-4 text-slate-400 text-sm italic">{card.front.hint}</div>
           )}
@@ -37,7 +32,7 @@ function FlashCard({ card, isFlipped, onFlip }: { card: Flashcard; isFlipped: bo
         </div>
 
         {/* Back */}
-        <div className="flashcard-back bg-slate-800 border-2 border-blue-600/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+        <div className="flashcard-back absolute inset-0 bg-slate-800 border-2 border-blue-600/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
           <div className="text-blue-400 text-xs uppercase tracking-widest mb-4">Answer</div>
           <p className="text-slate-200 text-base leading-relaxed">
             {card.back.text}
