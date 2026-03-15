@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --chem-blue: #2563eb;
+  --chem-green: #16a34a;
+  --chem-purple: #7c3aed;
+  --chem-orange: #ea580c;
+  --bond-gray: #6b7280;
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-hover: #273548;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Flashcard flip animation */
+.flashcard-container {
+  perspective: 1000px;
+}
+
+.flashcard-inner {
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.flashcard-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+/* Mechanism step fade in */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Atom pop in */
+@keyframes atomPop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  70%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.atom-animated {
+  animation: atomPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Bond draw */
+@keyframes bondDraw {
+  from { opacity: 0; stroke-dashoffset: 200; }
+  to   { opacity: 1; stroke-dashoffset: 0; }
+}
+.bond-animated {
+  stroke-dasharray: 200;
+  animation: bondDraw 0.5s ease forwards;
+}
+
+/* Electron arrow draws along its path */
+@keyframes arrowDraw {
+  from { stroke-dashoffset: 600; opacity: 0; }
+  to   { stroke-dashoffset: 0;   opacity: 1; }
+}
+.arrow-animated {
+  stroke-dasharray: 600;
+  animation: arrowDraw 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+
+/* Arrowhead pops in at end of draw */
+@keyframes arrowheadPop {
+  0%, 65% { opacity: 0; transform: scale(0); }
+  80%     { opacity: 1; transform: scale(1.3); }
+  100%    { opacity: 1; transform: scale(1); }
+}
+.arrowhead-animated {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arrowheadPop 0.9s ease forwards;
+}
+
+/* Highlight pulse for active atoms */
+@keyframes highlightPulse {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 0.85; }
+}
+.highlight-pulse {
+  animation: highlightPulse 1.8s ease-in-out infinite;
+}
+
+/* Explanation slide in */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.explanation-animated {
+  animation: fadeSlideIn 0.5s ease forwards;
+}
+
+/* Key point stagger */
+@keyframes pointSlide {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.keypoint-animated {
+  opacity: 0;
+  animation: pointSlide 0.4s ease forwards;
+}
+
+/* Streaming text cursor */
+.streaming-cursor::after {
+  content: '▋';
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }

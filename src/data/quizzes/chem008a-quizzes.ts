@@ -1,0 +1,282 @@
+import { Question } from '@/types/quiz';
+
+export const chem008aQuestions: Question[] = [
+  // Structure & Bonding
+  {
+    id: 'q008a-001',
+    topicId: 'structure-bonding',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 1,
+    prompt: 'What is the hybridization of the carbon atom in acetylene (HC≡CH)?',
+    options: ['sp3', 'sp2', 'sp', 'sp3d'],
+    correctIndex: 2,
+    explanation: 'Carbon in acetylene forms two sigma bonds (to H and to the other C) and two pi bonds (the triple bond). Two sigma bonds → two sp hybrid orbitals → sp hybridization. Bond angle = 180° (linear). The two unhybridized p orbitals on each carbon form the two pi bonds of the triple bond.',
+    tags: ['functional-groups'],
+  },
+  {
+    id: 'q008a-002',
+    topicId: 'structure-bonding',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 1,
+    prompt: 'Which statement about sigma (σ) and pi (π) bonds is CORRECT?',
+    options: [
+      'Pi bonds are stronger than sigma bonds because they involve more electron density',
+      'Sigma bonds result from end-to-end orbital overlap; pi bonds result from side-to-side overlap',
+      'Free rotation can occur around a C=C double bond because the pi bond is flexible',
+      'A triple bond consists of two sigma bonds and one pi bond'
+    ],
+    correctIndex: 1,
+    explanation: 'Sigma bonds form from direct (end-to-end or head-on) orbital overlap and allow free rotation. Pi bonds form from side-to-side (lateral) overlap of p orbitals and are generally weaker than sigma bonds. Rotation around a double bond is restricted because it would break the pi bond. A triple bond = one sigma + two pi bonds.',
+    tags: ['functional-groups'],
+  },
+  {
+    id: 'q008a-003',
+    topicId: 'structure-bonding',
+    courseId: 'CHEM008A',
+    type: 'short-answer',
+    difficulty: 2,
+    prompt: 'Explain why sp2-hybridized C-H bonds are more acidic than sp3-hybridized C-H bonds, using the concept of orbital hybridization.',
+    correctAnswer: 'sp2 C-H bonds are more acidic (lower pKa) because sp2 hybrid orbitals have more s-character (33%) than sp3 orbitals (25%). Higher s-character means the electrons are held closer to the nucleus (lower energy, more stable). The resulting carbanion after deprotonation is more stable when it resides in an orbital with more s-character. Therefore alkene sp2 C-H (pKa ~44) is more acidic than alkane sp3 C-H (pKa ~50), and sp C-H (terminal alkyne, pKa ~25) is most acidic of all due to 50% s-character.',
+    explanation: 'More s-character in the hybrid orbital → electrons held closer to nucleus → conjugate base (carbanion) more stable → higher acidity. Order: sp C-H (pKa ~25) > sp2 C-H (pKa ~44) > sp3 C-H (pKa ~50). This is why terminal alkynes can be deprotonated by NaNH2 (pKa ~38) but alkenes and alkanes cannot.',
+    tags: ['functional-groups'],
+  },
+
+  // Functional Groups & Nomenclature
+  {
+    id: 'q008a-004',
+    topicId: 'functional-groups',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 1,
+    prompt: 'What is the IUPAC name of CH3CH2CH(CH3)CH2CH3?',
+    options: ['3-methylpentane', '2-ethylbutane', '3-ethylpentane', '2-methylpentane'],
+    correctIndex: 0,
+    explanation: 'Find the longest carbon chain: CH3-CH2-CH-CH2-CH3 = 5 carbons = pentane. The methyl branch is on C3 (numbering gives lowest locant). Name: 3-methylpentane. "2-ethylbutane" is the same compound but 2-ethylbutane is not the correct IUPAC name because the longest chain is pentane (5C), not butane (4C).',
+    tags: ['functional-groups'],
+  },
+  {
+    id: 'q008a-005',
+    topicId: 'functional-groups',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'Rank the following compounds in order of INCREASING boiling point: (A) pentane, (B) 1-butanol, (C) diethyl ether, (D) neopentane',
+    options: [
+      'D < A < C < B',
+      'A < D < C < B',
+      'D < C < A < B',
+      'C < D < A < B'
+    ],
+    correctIndex: 0,
+    explanation: 'Boiling points depend on intermolecular forces. Neopentane (MW 72, highly branched, weak London forces) < pentane (MW 72, linear, more London forces) < diethyl ether (MW 74, dipole-dipole but no H-bond donor) < 1-butanol (MW 74, H-bonding with OH raises bp dramatically). Answer: D (neopentane, ~10°C) < A (pentane, 36°C) < C (diethyl ether, 35°C — actually similar, but ether has dipole) < B (1-butanol, 118°C).',
+    tags: ['functional-groups'],
+  },
+
+  // Stereochemistry
+  {
+    id: 'q008a-006',
+    topicId: 'stereochemistry',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'A compound has a specific rotation of +15°. After an SN2 reaction with NaCN, the product has a specific rotation of −7°. What can you conclude?',
+    options: [
+      'The product is the same enantiomer as the starting material',
+      'The reaction produced a racemic mixture',
+      'The configuration was inverted at the reaction center',
+      'A carbocation intermediate was formed'
+    ],
+    correctIndex: 2,
+    explanation: 'SN2 always proceeds with inversion of configuration (Walden inversion) — backside attack inverts the stereocenter. The change in sign of optical rotation (+ to −) is consistent with an inverted stereocenter. Note: you cannot always predict the sign change from configuration alone (depends on CIP priorities of substituents), but inversion of configuration is the defining feature of SN2 regardless of the optical rotation sign change.',
+    tags: ['stereochemistry', 'nucleophilic-substitution'],
+  },
+  {
+    id: 'q008a-007',
+    topicId: 'stereochemistry',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'Which of the following is a meso compound?',
+    options: [
+      '(2R,3R)-2,3-dibromobutane',
+      '(2R,3S)-2,3-dibromobutane',
+      '(2R,3R)-2,3-butanediol',
+      '(2S,3S)-2,3-dibromobutane'
+    ],
+    correctIndex: 1,
+    explanation: '(2R,3S)-2,3-dibromobutane is a meso compound. It has two stereocenters with opposite configurations (R and S), and when you examine the molecule, there is an internal plane of symmetry between C2 and C3. The molecule is superimposable on its mirror image. The two (2R,3R) and (2S,3S) isomers are enantiomers of each other, not meso.',
+    tags: ['stereochemistry'],
+  },
+  {
+    id: 'q008a-008',
+    topicId: 'stereochemistry',
+    courseId: 'CHEM008A',
+    type: 'short-answer',
+    difficulty: 3,
+    prompt: 'Explain the difference between configurational isomers and conformational isomers. Give one example of each and state whether they can be interconverted at room temperature.',
+    correctAnswer: 'Configurational isomers differ in the arrangement of atoms in space and require breaking bonds to interconvert (e.g., R and S enantiomers of 2-bromobutane). They cannot interconvert at room temperature without breaking bonds. Conformational isomers differ in spatial arrangement due to rotation around single bonds (e.g., chair and boat cyclohexane, or gauche and anti butane conformers). They interconvert rapidly at room temperature through bond rotation and are not considered distinct compounds.',
+    explanation: 'Key distinction: configurational isomers need bond breaking; conformational isomers interconvert by rotation. Stereoisomers include enantiomers, diastereomers (including geometric/E-Z isomers and conformers only in a broader sense). This distinction is fundamental for understanding when reactions do and do not change stereochemistry.',
+    tags: ['stereochemistry'],
+  },
+
+  // Acids & Bases
+  {
+    id: 'q008a-009',
+    topicId: 'acids-bases',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'Which compound is the MOST acidic?',
+    options: [
+      'CH3CH2OH (pKa 16)',
+      'CH3COOH (pKa 4.75)',
+      'HCl (pKa −7)',
+      'PhOH (phenol, pKa 10)'
+    ],
+    correctIndex: 2,
+    explanation: 'Lower pKa = stronger acid. HCl (pKa −7) is the strongest acid here — it is fully ionized in water. Acetic acid (pKa 4.75) is a weak acid, much stronger than phenol (pKa 10) or ethanol (pKa 16). The order of increasing acidity: ethanol < phenol < acetic acid < HCl.',
+    tags: ['functional-groups'],
+  },
+  {
+    id: 'q008a-010',
+    topicId: 'acids-bases',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'Why is acetic acid (CH3COOH, pKa 4.75) much more acidic than ethanol (CH3CH2OH, pKa 16)?',
+    options: [
+      'Acetic acid has a higher molecular weight',
+      'The acetate anion is resonance-stabilized, distributing negative charge equally over two oxygens',
+      'Oxygen in acetic acid is more electronegative than in ethanol',
+      'Acetic acid has an inductive effect from the additional oxygen'
+    ],
+    correctIndex: 1,
+    explanation: 'The acetate anion (CH3COO⁻) is stabilized by resonance — the negative charge is delocalized equally over both oxygens through the pi system. This lowers the energy of the conjugate base, making acetic acid more willing to donate a proton. Ethoxide (CH3CH2O⁻) has no such resonance stabilization — the charge is localized on one oxygen, making it much higher in energy (less stable).',
+    tags: ['functional-groups'],
+  },
+
+  // SN1 & SN2
+  {
+    id: 'q008a-011',
+    topicId: 'sn1-sn2',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'Which combination of substrate, nucleophile, and solvent BEST favors an SN2 reaction?',
+    options: [
+      'Tertiary alkyl bromide, NaCN, DMSO',
+      'Primary alkyl bromide, NaCN, DMSO',
+      'Tertiary alkyl bromide, H2O, ethanol',
+      'Secondary alkyl bromide, NaCN, water'
+    ],
+    correctIndex: 1,
+    explanation: 'SN2 is favored by: (1) Primary (unhindered) substrate — less steric hindrance to backside attack. (2) Strong, unhindered nucleophile — CN⁻ is excellent. (3) Polar aprotic solvent (DMSO, acetone, DMF) — does not solvate the nucleophile, keeping it reactive ("naked" anion). Tertiary substrates give no SN2 (steric blockade). Polar protic solvents (H2O, EtOH) stabilize nucleophile through H-bonding, reducing reactivity.',
+    tags: ['nucleophilic-substitution'],
+  },
+  {
+    id: 'q008a-012',
+    topicId: 'sn1-sn2',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: '(R)-2-bromobutane reacts with NaOH under SN2 conditions. What is the major product?',
+    options: [
+      '(R)-2-butanol',
+      '(S)-2-butanol',
+      'Racemic 2-butanol',
+      '1-butanol'
+    ],
+    correctIndex: 1,
+    explanation: 'SN2 proceeds with complete inversion of configuration (Walden inversion). OH⁻ attacks from the back face, inverting the stereocenter. (R)-2-bromobutane → (S)-2-butanol. Note: the configuration designation changes from R to S not just because of inversion, but because the CIP priorities of OH vs Br are different, which also affects the R/S assignment. The key point is 100% inversion of spatial arrangement.',
+    tags: ['nucleophilic-substitution', 'stereochemistry'],
+  },
+  {
+    id: 'q008a-013',
+    topicId: 'sn1-sn2',
+    courseId: 'CHEM008A',
+    type: 'short-answer',
+    difficulty: 3,
+    prompt: 'Explain why tert-butyl chloride undergoes SN1 but not SN2, whereas methyl chloride undergoes SN2 but not SN1. Include relevant concepts of mechanism and stability.',
+    correctAnswer: 'Tert-butyl chloride has three methyl groups on the carbon bearing the leaving group. These groups provide severe steric hindrance that completely blocks backside attack by a nucleophile (required for SN2). However, the three methyl groups stabilize the tert-butyl carbocation intermediate through electron donation (inductive effect/hyperconjugation), making SN1 ionization favorable. Methyl chloride forms an unstable primary (actually methyl) carbocation with no alkyl stabilization, so SN1 is disfavored. However, the methyl carbon has no steric hindrance, allowing easy backside attack by nucleophiles → SN2. In summary: SN2 requires unhindered carbon (methyl, primary best); SN1 requires stable carbocation (tertiary best).',
+    explanation: 'The key factors are: SN2 = steric accessibility (primary > secondary >> tertiary); SN1 = carbocation stability (tertiary > secondary >> primary). These opposite requirements explain why tertiary substrates do SN1 and methyl/primary substrates do SN2.',
+    tags: ['nucleophilic-substitution'],
+  },
+
+  // E1 & E2
+  {
+    id: 'q008a-014',
+    topicId: 'e1-e2',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'What is the major product when 2-bromo-2-methylbutane reacts with KOtBu (potassium tert-butoxide) in tert-butanol?',
+    options: [
+      '2-methyl-2-butanol (SN1 product)',
+      '2-methyl-2-butene (Zaitsev product)',
+      '2-methyl-1-butene (Hofmann product)',
+      'Racemic 2-methyl-2-butanol'
+    ],
+    correctIndex: 1,
+    explanation: 'KOtBu is a strong, bulky base that favors elimination over substitution. With a tertiary substrate (E2 favored). Zaitsev\'s rule predicts the more substituted alkene (2-methyl-2-butene, trisubstituted) as the major product. While KOtBu is bulky, it still gives predominantly the Zaitsev product here unless the substrate specifically forces Hofmann. The Hofmann product (2-methyl-1-butene) forms in lesser amounts.',
+    tags: ['elimination', 'stereochemistry'],
+  },
+  {
+    id: 'q008a-015',
+    topicId: 'e1-e2',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 3,
+    prompt: 'In an E2 reaction with a cyclohexane substrate, which geometric relationship must exist between the beta-H and the leaving group?',
+    options: [
+      'Both must be equatorial (equatorial-equatorial)',
+      'Both must be axial (diaxial, anti-periplanar)',
+      'H must be axial, LG must be equatorial',
+      'They can be in any relationship as long as the base is strong enough'
+    ],
+    correctIndex: 1,
+    explanation: 'E2 requires anti-periplanar geometry — the H and LG must be 180° apart. In cyclohexane, the only way to achieve this is with both H and LG in axial positions (trans-diaxial). Equatorial-equatorial positions are gauche (60°) and cannot undergo E2. This means you often must consider chair conformations to determine if E2 can occur and which H is removed.',
+    tags: ['elimination', 'stereochemistry'],
+  },
+  {
+    id: 'q008a-016',
+    topicId: 'e1-e2',
+    courseId: 'CHEM008A',
+    type: 'short-answer',
+    difficulty: 3,
+    prompt: 'A student treats 2-bromopentane with sodium ethoxide (NaOEt/EtOH). They obtain a mixture of pent-1-ene and pent-2-ene. Explain why both products form and predict which is the major product using Zaitsev\'s rule.',
+    correctAnswer: 'NaOEt is a strong base that promotes E2 elimination. 2-bromopentane has two types of beta-hydrogens: those on C1 (giving pent-1-ene) and those on C3 (giving pent-2-ene). Both can be anti-periplanar to the C2-Br bond. Zaitsev\'s rule states that the more substituted alkene is the major product because it is more thermodynamically stable (more alkyl substituents donate electron density into the pi bond via hyperconjugation, stabilizing it). Pent-2-ene (disubstituted) is more stable than pent-1-ene (monosubstituted), so pent-2-ene is the major product. With a bulkier base like KOtBu, pent-1-ene (Hofmann product) would be favored.',
+    explanation: 'E2 gives both products when there are beta-H atoms on both sides. Zaitsev product = more substituted alkene = major with small base. Hofmann product = less substituted = major with bulky base.',
+    tags: ['elimination'],
+  },
+  {
+    id: 'q008a-017',
+    topicId: 'sn1-sn2',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 2,
+    prompt: 'Why does iodide (I⁻) make a better nucleophile than fluoride (F⁻) in SN2 reactions in polar aprotic solvents, even though fluorine is more electronegative?',
+    options: [
+      'Iodide has a larger negative charge',
+      'Iodide is less electronegative, so it holds electrons less tightly, making it more reactive',
+      'Iodide is larger and more polarizable, with electrons more loosely held and available for overlap with the electrophilic carbon',
+      'Fluoride reacts via a different mechanism'
+    ],
+    correctIndex: 2,
+    explanation: 'Nucleophilicity in polar aprotic solvents follows the same trend as polarizability: I⁻ > Br⁻ > Cl⁻ > F⁻. Iodide has a large, diffuse electron cloud that is easily distorted (highly polarizable), making its lone pairs more available to interact with the electrophilic carbon. Although F⁻ is strongly electronegative, it holds its electrons tightly (low polarizability), making them less available for bond formation. In polar protic solvents, F⁻ is heavily solvated and even less reactive.',
+    tags: ['nucleophilic-substitution'],
+  },
+  {
+    id: 'q008a-018',
+    topicId: 'functional-groups',
+    courseId: 'CHEM008A',
+    type: 'multiple-choice',
+    difficulty: 1,
+    prompt: 'Which of the following functional groups contains a carbonyl carbon bonded directly to oxygen AND another carbon?',
+    options: ['Aldehyde', 'Ketone', 'Ether', 'Alkene'],
+    correctIndex: 1,
+    explanation: 'A ketone has a carbonyl group (C=O) flanked on both sides by carbon groups (R-CO-R\'). An aldehyde has a carbonyl bonded to at least one hydrogen. An ether (R-O-R\') has no carbonyl. An alkene has a C=C, not a C=O.',
+    tags: ['functional-groups'],
+  },
+];
