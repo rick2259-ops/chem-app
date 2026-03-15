@@ -51,6 +51,19 @@ function TopicCard({ topic, course, score }: { topic: Topic; course: Course; sco
         <p className="text-slate-400 text-sm leading-relaxed">{topic.description}</p>
       </div>
 
+      {/* Real world example preview */}
+      {topic.realWorldExamples?.[0] && (
+        <div className="bg-slate-700/40 rounded-lg px-3 py-2.5 border border-slate-600/40">
+          <div className="flex items-start gap-2">
+            <span className="text-lg leading-none mt-0.5">{topic.realWorldExamples[0].emoji}</span>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-slate-300 mb-0.5">Real World: {topic.realWorldExamples[0].title}</div>
+              <div className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{topic.realWorldExamples[0].description}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-1.5">
         {topic.tags.map(tag => (
           <span key={tag} className={`text-xs px-2 py-0.5 rounded-full ${config.tagClass}`}>
@@ -67,6 +80,12 @@ function TopicCard({ topic, course, score }: { topic: Topic; course: Course; sco
       </div>
 
       <div className="flex gap-2 pt-1 border-t border-slate-700">
+        <Link
+          href={`/lecture/${topic.id}`}
+          className="flex-1 text-center text-xs py-2 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white transition-colors font-medium"
+        >
+          📖 Lecture
+        </Link>
         <Link
           href={`/quiz/${topic.id}`}
           className="flex-1 text-center text-xs py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"

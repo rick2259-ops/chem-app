@@ -21,6 +21,12 @@ export interface Course {
   topics: Topic[];
 }
 
+export interface RealWorldExample {
+  emoji: string;
+  title: string;
+  description: string;
+}
+
 export interface Topic {
   id: string;
   courseId: CourseId;
@@ -31,4 +37,5 @@ export interface Topic {
   mechanismIds: string[];
   flashcardDeckIds: string[];
   estimatedMinutes: number;
+  realWorldExamples: RealWorldExample[];
 }

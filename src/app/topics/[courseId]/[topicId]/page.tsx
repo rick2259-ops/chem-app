@@ -136,9 +136,41 @@ export default function TopicDetailPage({
         </div>
       </div>
 
+      {/* Real World Examples */}
+      {topic.realWorldExamples?.length > 0 && (
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-white">Real World Examples</h2>
+            <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30">Why this matters</span>
+          </div>
+          <div className="space-y-4">
+            {topic.realWorldExamples.map((example, idx) => (
+              <div key={idx} className="flex gap-4 p-4 bg-slate-700/40 rounded-xl border border-slate-600/40 hover:bg-slate-700/60 transition-colors">
+                <div className="text-3xl flex-shrink-0 mt-0.5">{example.emoji}</div>
+                <div>
+                  <div className="text-white font-semibold text-sm mb-1">{example.title}</div>
+                  <p className="text-slate-300 text-sm leading-relaxed">{example.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Activities */}
       <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Available Activities</h2>
+        <h2 className="text-lg font-semibold text-white mb-1">Available Activities</h2>
+        <p className="text-slate-500 text-xs mb-4">New to this topic? Start with the Lecture first.</p>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <Link
+            href={`/lecture/${topicId}`}
+            className="flex flex-col items-center gap-2 p-4 bg-amber-500/15 border border-amber-500/40 rounded-xl hover:bg-amber-500/25 transition-colors text-center col-span-2"
+          >
+            <span className="text-2xl">📖</span>
+            <div className="text-white text-sm font-semibold">Read the Lecture</div>
+            <div className="text-amber-300 text-xs">Start here if you're new to this topic — AI explains everything from scratch</div>
+          </Link>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <Link
             href={`/quiz/${topicId}`}
