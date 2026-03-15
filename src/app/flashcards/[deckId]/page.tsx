@@ -1,12 +1,111 @@
 'use client';
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { getDeck, getCardsForDeck } from '@/data/flashcards';
 import { getDueCards, reviewCard, createNewSRSCard } from '@/lib/srs/scheduler';
 import { useProgress } from '@/hooks/useProgress';
 import { Flashcard } from '@/types/flashcard';
 
 type Rating = 0 | 1 | 2 | 3;
+
+// Reusable streaming AI panel for flashcards
+function CardAIPanel({ mode, card, label, icon, borderColor, textColor, bgColor }: {
+  mode: 'reallife' | 'minilecture';
+  card: Flashcard;
+  label: string;
+  icon: string;
+  borderColor: string;
+  textColor: string;
+  bgColor: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const hasFetched = useRef(false);
+
+  // Reset when card changes
+  useEffect(() => {
+    setIsOpen(false);
+    setText('');
+    setIsLoading(false);
+    hasFetched.current = false;
+  }, [card.id]);
+
+  const handleOpen = async () => {
+    if (hasFetched.current) { setIsOpen(o => !o); return; }
+    hasFetched.current = true;
+    setIsOpen(true);
+    setIsLoading(true);
+
+    try {
+      const res = await fetch('/api/tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          [mode === 'reallife' ? 'flashcardRealLifeMode' : 'flashcardMiniLectureMode']: true,
+          cardFront: card.front.text,
+          cardBack: card.back.text,
+          cardCategory: card.category,
+        }),
+      });
+      if (!res.body) throw new Error();
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setText(acc);
+      }
+    } catch {
+      setText('Could not load. Please check your API key.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full text-left">
+      <button
+        onClick={handleOpen}
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border ${borderColor} ${bgColor} ${textColor} hover:opacity-90 transition-all text-xs font-medium`}
+      >
+        <span>{icon}</span>
+        {label}
+        <span className="ml-auto text-slate-500">{isOpen ? '▲' : '▼'}</span>
+      </button>
+
+      {isOpen && (
+        <div className={`mt-1 rounded-xl border ${borderColor} bg-slate-900 p-4 text-left animate-fadeInUp`}>
+          {isLoading && !text && (
+            <div className="flex items-center gap-2 text-slate-400 text-xs">
+              <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              Generating...
+            </div>
+          )}
+          {text && (
+            <div className={`text-xs leading-relaxed ${textColor}`}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => <p className="mb-2 last:mb-0 text-slate-200">{children}</p>,
+                  strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                  code: ({ children }) => <code className="bg-slate-800 text-green-300 px-1 rounded font-mono text-xs">{children}</code>,
+                  ul: ({ children }) => <ul className="space-y-1 mb-2">{children}</ul>,
+                  li: ({ children }) => <li className="flex gap-1.5 text-slate-200"><span className="text-blue-400 flex-shrink-0">•</span><span>{children}</span></li>,
+                }}
+              >{text}</ReactMarkdown>
+              {isLoading && <span className="streaming-cursor text-blue-400" />}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const ratingConfig: { rating: Rating; label: string; color: string; desc: string }[] = [
   { rating: 0, label: 'Again', color: 'bg-red-600 hover:bg-red-500', desc: 'Forgot completely' },
@@ -17,33 +116,56 @@ const ratingConfig: { rating: Rating; label: string; color: string; desc: string
 
 function FlashCard({ card, isFlipped, onFlip }: { card: Flashcard; isFlipped: boolean; onFlip: () => void }) {
   return (
-    <div className="flashcard-container w-full" style={{ height: '360px' }} onClick={onFlip}>
-      <div className={`flashcard-inner w-full h-full cursor-pointer relative ${isFlipped ? 'flipped' : ''}`}>
-        {/* Front */}
-        <div className="flashcard-front absolute inset-0 bg-slate-800 border-2 border-slate-600 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-slate-500 transition-colors">
-          <div className="text-slate-500 text-xs uppercase tracking-widest mb-4">Question</div>
-          <p className="text-white text-xl font-medium leading-relaxed">
-            {card.front.text}
-          </p>
-          {card.front.hint && (
-            <div className="mt-4 text-slate-400 text-sm italic">{card.front.hint}</div>
-          )}
-          <div className="mt-8 text-slate-600 text-sm">Click to reveal answer</div>
-        </div>
+    <div className="w-full">
+      {/* Card flip area */}
+      <div className="flashcard-container w-full" style={{ height: '260px' }} onClick={onFlip}>
+        <div className={`flashcard-inner w-full h-full cursor-pointer relative ${isFlipped ? 'flipped' : ''}`}>
+          {/* Front */}
+          <div className="flashcard-front absolute inset-0 bg-slate-800 border-2 border-slate-600 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-slate-500 transition-colors">
+            <div className="text-slate-500 text-xs uppercase tracking-widest mb-4">Question</div>
+            <p className="text-white text-xl font-medium leading-relaxed">{card.front.text}</p>
+            {card.front.hint && (
+              <div className="mt-4 text-slate-400 text-sm italic">{card.front.hint}</div>
+            )}
+            <div className="mt-6 text-slate-600 text-sm">Click to reveal answer</div>
+          </div>
 
-        {/* Back */}
-        <div className="flashcard-back absolute inset-0 bg-slate-800 border-2 border-blue-600/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-          <div className="text-blue-400 text-xs uppercase tracking-widest mb-4">Answer</div>
-          <p className="text-slate-200 text-base leading-relaxed">
-            {card.back.text}
-          </p>
-          {card.back.formula && (
-            <div className="mt-4 bg-slate-700 rounded-lg px-4 py-2 font-mono text-green-300 text-lg">
-              {card.back.formula}
-            </div>
-          )}
+          {/* Back */}
+          <div className="flashcard-back absolute inset-0 bg-slate-800 border-2 border-blue-600/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+            <div className="text-blue-400 text-xs uppercase tracking-widest mb-3">Answer</div>
+            <p className="text-slate-200 text-base leading-relaxed">{card.back.text}</p>
+            {card.back.formula && (
+              <div className="mt-3 bg-slate-700 rounded-lg px-4 py-2 font-mono text-green-300 text-lg">
+                {card.back.formula}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* AI help buttons — only visible when flipped */}
+      {isFlipped && (
+        <div className="mt-3 space-y-2 animate-fadeInUp">
+          <CardAIPanel
+            mode="reallife"
+            card={card}
+            label="Show Real Life Example"
+            icon="🌍"
+            borderColor="border-amber-500/30"
+            textColor="text-amber-300"
+            bgColor="bg-amber-500/10"
+          />
+          <CardAIPanel
+            mode="minilecture"
+            card={card}
+            label="Mini Lecture — Explain This to Me"
+            icon="⚡"
+            borderColor="border-blue-500/30"
+            textColor="text-blue-300"
+            bgColor="bg-blue-500/10"
+          />
+        </div>
+      )}
     </div>
   );
 }

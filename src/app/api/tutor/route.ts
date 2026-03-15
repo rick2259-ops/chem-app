@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt } from '@/lib/claude/prompts';
+import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt } from '@/lib/claude/prompts';
 import { TutorContext, ChatMessage } from '@/types/tutor';
 
 const client = new Anthropic({
@@ -15,6 +15,11 @@ export async function POST(req: NextRequest) {
       context,
       gradingMode,
       lectureMode,
+      flashcardRealLifeMode,
+      flashcardMiniLectureMode,
+      cardFront,
+      cardBack,
+      cardCategory,
       topicTitle,
       courseId,
       description,
@@ -28,6 +33,11 @@ export async function POST(req: NextRequest) {
       context?: TutorContext;
       gradingMode?: boolean;
       lectureMode?: boolean;
+      flashcardRealLifeMode?: boolean;
+      flashcardMiniLectureMode?: boolean;
+      cardFront?: string;
+      cardBack?: string;
+      cardCategory?: string;
       topicTitle?: string;
       courseId?: string;
       description?: string;
@@ -37,6 +47,42 @@ export async function POST(req: NextRequest) {
       correctAnswer?: string;
       studentAnswer?: string;
     };
+
+    // Flashcard real-life example
+    if (flashcardRealLifeMode && cardFront && cardBack) {
+      const prompt = buildFlashcardRealLifePrompt(cardFront, cardBack);
+      const stream = await client.messages.create({
+        model: 'claude-sonnet-4-6', max_tokens: 400,
+        messages: [{ role: 'user', content: prompt }], stream: true,
+      });
+      const readable = new ReadableStream({
+        async start(controller) {
+          for await (const event of stream)
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta')
+              controller.enqueue(new TextEncoder().encode(event.delta.text));
+          controller.close();
+        },
+      });
+      return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
+
+    // Flashcard mini lecture
+    if (flashcardMiniLectureMode && cardFront && cardBack) {
+      const prompt = buildFlashcardMiniLecturePrompt(cardFront, cardBack, cardCategory ?? 'general');
+      const stream = await client.messages.create({
+        model: 'claude-sonnet-4-6', max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }], stream: true,
+      });
+      const readable = new ReadableStream({
+        async start(controller) {
+          for await (const event of stream)
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta')
+              controller.enqueue(new TextEncoder().encode(event.delta.text));
+          controller.close();
+        },
+      });
+      return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
 
     if (lectureMode && topicTitle && courseId && description && learningObjectives && realWorldExamples) {
       const prompt = buildLecturePrompt(topicTitle, courseId, description, learningObjectives, realWorldExamples);

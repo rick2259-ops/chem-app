@@ -42,6 +42,47 @@ FORMATTING RULES:
 - Be concise but complete — aim for 150-300 words unless a complex topic requires more`;
 }
 
+export function buildFlashcardRealLifePrompt(front: string, back: string): string {
+  return `Give 2 vivid real-world examples that illustrate this organic chemistry concept. Each example should make the concept click for a life science student.
+
+CONCEPT: "${front}"
+ANSWER: "${back}"
+
+Format exactly like this (use markdown):
+
+**Example 1: [catchy title with emoji]**
+2-3 sentences connecting this concept to something real — medicine, food, biology, everyday life.
+
+**Example 2: [catchy title with emoji]**
+2-3 sentences. Different angle from Example 1.
+
+Be specific, surprising, and memorable. No filler. Max 120 words total.`;
+}
+
+export function buildFlashcardMiniLecturePrompt(front: string, back: string, category: string): string {
+  return `Give a focused, beginner-friendly mini-lecture on this single organic chemistry concept. The student just flipped a flashcard and wants to truly understand it — not just memorize it.
+
+CONCEPT: "${front}"
+ANSWER: "${back}"
+CATEGORY: ${category}
+
+Write a mini-lecture with this structure (use markdown, keep it SHORT and punchy):
+
+**🧠 The Big Idea**
+One sentence plain-English explanation — what is this really?
+
+**⚙️ How It Works**
+2-4 sentences explaining the mechanism or reasoning behind it. Use an analogy if helpful.
+
+**⚠️ Don't Confuse It With**
+One common mix-up students make and how to avoid it.
+
+**🔑 Remember It By**
+One memorable trick, mnemonic, or hook to lock it in.
+
+Max 150 words total. Be clear, direct, and teach like a great TA.`;
+}
+
 export function buildLecturePrompt(
   topicTitle: string,
   courseId: string,
