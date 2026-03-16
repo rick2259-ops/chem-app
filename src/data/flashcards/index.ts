@@ -2,6 +2,7 @@ import { functionalGroupCards, functionalGroupsDeck } from './functional-groups'
 import { reagentCards, reagentsDeck } from './reagents';
 import { namedReactionCards, namedReactionsDeck } from './named-reactions';
 import { stereochemistryCards, stereochemistryDeck } from './stereochemistry';
+import { chem008cCards, chem008cDeck } from './chem008c';
 import { Flashcard, Deck } from '@/types/flashcard';
 
 export const allDecks: Deck[] = [
@@ -9,6 +10,7 @@ export const allDecks: Deck[] = [
   reagentsDeck,
   namedReactionsDeck,
   stereochemistryDeck,
+  chem008cDeck,
 ];
 
 export const deckMap: Record<string, Deck> = {
@@ -16,6 +18,7 @@ export const deckMap: Record<string, Deck> = {
   'reagents': reagentsDeck,
   'named-reactions': namedReactionsDeck,
   'stereochemistry': stereochemistryDeck,
+  'chem008c': chem008cDeck,
 };
 
 export const allCards: Flashcard[] = [
@@ -23,6 +26,7 @@ export const allCards: Flashcard[] = [
   ...reagentCards,
   ...namedReactionCards,
   ...stereochemistryCards,
+  ...chem008cCards,
 ];
 
 export const cardMap: Record<string, Flashcard> = Object.fromEntries(
@@ -54,4 +58,6 @@ export {
   namedReactionsDeck,
   stereochemistryCards,
   stereochemistryDeck,
+  chem008cCards,
+  chem008cDeck,
 };
