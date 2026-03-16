@@ -1,10 +1,10 @@
 'use client';
-import { use, useState, useRef } from 'react';
+import { use, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getQuizQuestions } from '@/data/quizzes';
-import { getTopic, courses } from '@/data/courses';
+import { getTopic } from '@/data/courses';
 import { useQuizSession } from '@/hooks/useQuizSession';
 
 function ScoreCircle({ score }: { score: number }) {
@@ -26,19 +26,33 @@ function ScoreCircle({ score }: { score: number }) {
   );
 }
 
-// Inline AI deep-explanation panel
-function AskAIPanel({ questionPrompt, topicTitle, explanation }: {
+// Focused AI panel — same approach as flashcards, scoped to the exact question
+function QuizAIPanel({ mode, questionPrompt, correctAnswer, resetKey, label, icon, borderColor, textColor, bgColor }: {
+  mode: 'reallife' | 'minilecture';
   questionPrompt: string;
-  topicTitle: string;
-  explanation: string;
+  correctAnswer: string;
+  resetKey: string;        // changes on each new question to auto-reset
+  label: string;
+  icon: string;
+  borderColor: string;
+  textColor: string;
+  bgColor: string;
 }) {
-  const [aiText, setAiText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [text, setText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const hasFetched = useRef(false);
 
-  const fetch_explanation = async () => {
-    if (hasFetched.current) { setIsOpen(true); return; }
+  // Reset when question changes
+  useEffect(() => {
+    setIsOpen(false);
+    setText('');
+    setIsLoading(false);
+    hasFetched.current = false;
+  }, [resetKey]);
+
+  const handleOpen = async () => {
+    if (hasFetched.current) { setIsOpen(o => !o); return; }
     hasFetched.current = true;
     setIsOpen(true);
     setIsLoading(true);
@@ -48,20 +62,12 @@ function AskAIPanel({ questionPrompt, topicTitle, explanation }: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [{
-            id: '1', role: 'user',
-            content: `I got this question wrong on my organic chemistry quiz and I need help understanding it deeply.\n\nQuestion: "${questionPrompt}"\n\nThe explanation given was: "${explanation}"\n\nPlease explain this concept in simple terms with an everyday analogy, then explain why the correct answer makes chemical sense. Keep it to 150-200 words.`,
-            timestamp: new Date().toISOString(),
-          }],
-          context: {
-            currentTopicId: null,
-            currentCourseId: null,
-            recentWeakAreas: [],
-            sessionGoal: `Understanding: ${topicTitle}`,
-          },
+          [mode === 'reallife' ? 'flashcardRealLifeMode' : 'flashcardMiniLectureMode']: true,
+          cardFront: questionPrompt,
+          cardBack: correctAnswer,
+          cardCategory: 'quiz-question',
         }),
       });
-
       if (!res.body) throw new Error();
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -70,82 +76,49 @@ function AskAIPanel({ questionPrompt, topicTitle, explanation }: {
         const { done, value } = await reader.read();
         if (done) break;
         acc += decoder.decode(value, { stream: true });
-        setAiText(acc);
+        setText(acc);
       }
     } catch {
-      setAiText('Sorry, could not load explanation. Please check your API key.');
+      setText('Could not load. Please check your API key.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="mt-2">
+    <div className="w-full">
       <button
-        onClick={fetch_explanation}
-        className="text-xs px-3 py-1.5 bg-orange-600/20 border border-orange-500/30 text-orange-300 hover:bg-orange-600/30 rounded-lg transition-colors flex items-center gap-1.5"
+        onClick={handleOpen}
+        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border ${borderColor} ${bgColor} ${textColor} hover:opacity-90 transition-all text-xs font-medium`}
       >
-        🤖 Ask AI to explain this
+        <span>{icon}</span>
+        {label}
+        <span className="ml-auto text-slate-500">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {isOpen && (
-        <div className="mt-2 bg-slate-900 border border-orange-500/20 rounded-xl p-4 animate-fadeInUp">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-orange-300 font-medium">🤖 AI Explanation</span>
-            <button onClick={() => setIsOpen(false)} className="text-slate-500 hover:text-white text-xs">✕</button>
-          </div>
-          {isLoading && !aiText && (
-            <div className="flex items-center gap-2 text-slate-400 text-sm">
-              <div className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-              Generating explanation...
+        <div className={`mt-1 rounded-xl border ${borderColor} bg-slate-900 p-4 animate-fadeInUp`}>
+          {isLoading && !text && (
+            <div className="flex items-center gap-2 text-slate-400 text-xs">
+              <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              Generating...
             </div>
           )}
-          {aiText && (
-            <div className="text-sm text-slate-200 leading-relaxed">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}
+          {text && (
+            <div className="text-xs leading-relaxed">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
                 components={{
-                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                  strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                  code: ({ children }) => <code className="bg-slate-800 text-green-300 px-1 rounded text-xs font-mono">{children}</code>,
+                  p: ({ children }) => <p className="mb-2 last:mb-0 text-slate-200">{children}</p>,
+                  strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                  code: ({ children }) => <code className="bg-slate-800 text-green-300 px-1 rounded font-mono">{children}</code>,
+                  ul: ({ children }) => <ul className="space-y-1 mb-2">{children}</ul>,
+                  li: ({ children }) => <li className="flex gap-1.5 text-slate-200"><span className="text-blue-400 flex-shrink-0">•</span><span>{children}</span></li>,
                 }}
-              >{aiText}</ReactMarkdown>
-              {isLoading && <span className="streaming-cursor text-orange-400" />}
+              >{text}</ReactMarkdown>
+              {isLoading && <span className="streaming-cursor text-blue-400" />}
             </div>
           )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Real life examples inline panel
-function RealLifePanel({ topicId }: { topicId: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const topic = getTopic(topicId);
-  const examples = topic?.realWorldExamples ?? [];
-
-  if (examples.length === 0) return null;
-
-  return (
-    <div className="mt-2">
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="text-xs px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-lg transition-colors flex items-center gap-1.5"
-      >
-        🌍 {isOpen ? 'Hide' : 'Show'} Real Life Examples
-      </button>
-
-      {isOpen && (
-        <div className="mt-2 space-y-2 animate-fadeInUp">
-          {examples.map((ex, i) => (
-            <div key={i} className="flex gap-3 bg-amber-500/5 border border-amber-500/15 rounded-xl p-3">
-              <span className="text-xl flex-shrink-0">{ex.emoji}</span>
-              <div>
-                <div className="text-amber-200 text-xs font-semibold mb-0.5">{ex.title}</div>
-                <p className="text-slate-300 text-xs leading-relaxed">{ex.description}</p>
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>
@@ -321,17 +294,39 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
                         </div>
                       )}
 
-                      {/* Help buttons for wrong answers */}
+                      {/* Focused help for wrong answers */}
                       {!attempt.isCorrect && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Link href={`/lecture/${topicId}`}
-                            className="text-xs px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-lg transition-colors">
-                            📖 Review Lecture
-                          </Link>
-                          <Link href={`/tutor`}
-                            className="text-xs px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 text-orange-300 hover:bg-orange-500/25 rounded-lg transition-colors">
-                            🤖 Ask AI Tutor
-                          </Link>
+                        <div className="space-y-2 mt-3">
+                          <QuizAIPanel
+                            mode="reallife"
+                            questionPrompt={q.prompt}
+                            correctAnswer={
+                              q.type === 'multiple-choice' && q.options && q.correctIndex != null
+                                ? q.options[q.correctIndex]
+                                : q.correctAnswer ?? q.explanation
+                            }
+                            resetKey={`results-${q.id}`}
+                            label="Real Life Example for This Question"
+                            icon="🌍"
+                            borderColor="border-amber-500/30"
+                            textColor="text-amber-300"
+                            bgColor="bg-amber-500/10"
+                          />
+                          <QuizAIPanel
+                            mode="minilecture"
+                            questionPrompt={q.prompt}
+                            correctAnswer={
+                              q.type === 'multiple-choice' && q.options && q.correctIndex != null
+                                ? q.options[q.correctIndex]
+                                : q.correctAnswer ?? q.explanation
+                            }
+                            resetKey={`results-${q.id}`}
+                            label="Mini Lecture — Explain This Concept"
+                            icon="⚡"
+                            borderColor="border-blue-500/30"
+                            textColor="text-blue-300"
+                            bgColor="bg-blue-500/10"
+                          />
                         </div>
                       )}
                     </div>
@@ -465,25 +460,46 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
                 <div className="text-slate-500 text-xs mb-3">
                   {lastAttempt?.isCorrect ? 'Want to learn more?' : 'Need help understanding this?'}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {/* Real life examples */}
-                  <RealLifePanel topicId={topicId} />
-
-                  {/* Review lecture */}
+                <div className="space-y-2">
+                  <QuizAIPanel
+                    mode="reallife"
+                    questionPrompt={currentQuestion.prompt}
+                    correctAnswer={
+                      currentQuestion.type === 'multiple-choice' && currentQuestion.options && currentQuestion.correctIndex != null
+                        ? currentQuestion.options[currentQuestion.correctIndex]
+                        : currentQuestion.correctAnswer ?? aiFeedback
+                    }
+                    resetKey={currentQuestion.id}
+                    label="Show Real Life Example for This Question"
+                    icon="🌍"
+                    borderColor="border-amber-500/30"
+                    textColor="text-amber-300"
+                    bgColor="bg-amber-500/10"
+                  />
+                  <QuizAIPanel
+                    mode="minilecture"
+                    questionPrompt={currentQuestion.prompt}
+                    correctAnswer={
+                      currentQuestion.type === 'multiple-choice' && currentQuestion.options && currentQuestion.correctIndex != null
+                        ? currentQuestion.options[currentQuestion.correctIndex]
+                        : currentQuestion.correctAnswer ?? aiFeedback
+                    }
+                    resetKey={currentQuestion.id}
+                    label="Mini Lecture — Explain This Concept to Me"
+                    icon="⚡"
+                    borderColor="border-blue-500/30"
+                    textColor="text-blue-300"
+                    bgColor="bg-blue-500/10"
+                  />
                   <Link
                     href={`/lecture/${topicId}`}
                     target="_blank"
-                    className="text-xs px-3 py-1.5 bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 rounded-lg transition-colors flex items-center gap-1.5"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-600 bg-slate-700/40 text-slate-300 hover:bg-slate-700 transition-all text-xs font-medium"
                   >
-                    📖 Review Lecture
+                    <span>📖</span>
+                    Review Full Topic Lecture
+                    <span className="ml-auto text-slate-500">↗</span>
                   </Link>
-
-                  {/* Inline AI explanation */}
-                  <AskAIPanel
-                    questionPrompt={currentQuestion.prompt}
-                    topicTitle={topic.title}
-                    explanation={aiFeedback}
-                  />
                 </div>
               </div>
             </>
