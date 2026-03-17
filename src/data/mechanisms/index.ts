@@ -8,6 +8,12 @@ import { easMechanism } from './electrophilic-aromatic';
 import { grignardMechanism } from './grignard';
 import { nucleophilicAdditionMechanism } from './nucleophilic-addition';
 import { esterHydrolysisMechanism } from './ester-hydrolysis';
+import { hydroborationOxidationMechanism } from './hydroboration-oxidation';
+import { oxymercurationMechanism } from './oxymercuration';
+import { epoxidationMechanism } from './epoxidation';
+import { dihydroxylationMechanism } from './dihydroxylation';
+import { acetalFormationMechanism } from './acetal-formation';
+import { carbocationRearrangementMechanism } from './carbocation-rearrangement';
 import { Mechanism } from '@/types/mechanism';
 
 export const allMechanisms: Mechanism[] = [
@@ -21,6 +27,12 @@ export const allMechanisms: Mechanism[] = [
   grignardMechanism,
   nucleophilicAdditionMechanism,
   esterHydrolysisMechanism,
+  hydroborationOxidationMechanism,
+  oxymercurationMechanism,
+  epoxidationMechanism,
+  dihydroxylationMechanism,
+  acetalFormationMechanism,
+  carbocationRearrangementMechanism,
 ];
 
 export const mechanismMap: Record<string, Mechanism> = Object.fromEntries(
@@ -50,4 +62,10 @@ export {
   grignardMechanism,
   nucleophilicAdditionMechanism,
   esterHydrolysisMechanism,
+  hydroborationOxidationMechanism,
+  oxymercurationMechanism,
+  epoxidationMechanism,
+  dihydroxylationMechanism,
+  acetalFormationMechanism,
+  carbocationRearrangementMechanism,
 };

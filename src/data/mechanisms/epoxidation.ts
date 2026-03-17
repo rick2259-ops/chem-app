@@ -1,0 +1,191 @@
+import { Mechanism } from '@/types/mechanism';
+
+export const epoxidationMechanism: Mechanism = {
+  id: 'epoxidation',
+  name: 'mCPBA Epoxidation',
+  courseId: 'CHEM008B',
+  topicId: 'oxidation-reduction',
+  reactionType: 'oxidation-reduction',
+  overview:
+    'Epoxidation with mCPBA (meta-chloroperoxybenzoic acid) converts an alkene to an epoxide (oxirane) with syn (retention) stereochemistry. The peracid delivers an oxygen atom to both carbons of the alkene simultaneously in a concerted, butterfly-like transition state. The two groups cis on the alkene end up cis in the epoxide (syn addition of oxygen). The epoxide is a highly strained, reactive 3-membered ring that can be opened by nucleophiles.',
+  steps: [
+    {
+      stepNumber: 1,
+      title: 'mCPBA Approaches the Alkene (Butterfly Transition State)',
+      explanation:
+        'mCPBA (or any peracid like peracetic acid, MMPP) approaches the alkene pi system from one face. The oxygen to be transferred is the carbonyl oxygen of the peracid. In the "butterfly" transition state, the O-O bond of the peracid breaks heterolytically while simultaneously both new C-O bonds form. The process is concerted — a single transition state. Both carbons attack the same electrophilic oxygen at the same time.',
+      svgScene: {
+        viewBox: '0 0 800 300',
+        atoms: [
+          { id: 'c1', element: 'C', x: 280, y: 160, highlight: 'attack' },
+          { id: 'c2', element: 'C', x: 450, y: 160, highlight: 'attack' },
+          { id: 'o', element: 'O', x: 365, y: 250, highlight: 'attack' },
+          { id: 'h1', element: 'H', x: 240, y: 90, highlight: 'none' },
+          { id: 'h2', element: 'H', x: 220, y: 180, highlight: 'none' },
+          { id: 'r1', element: 'R', x: 520, y: 90, highlight: 'none' },
+          { id: 'r2', element: 'R', x: 520, y: 230, highlight: 'none' },
+          { id: 'mcpba', element: 'ArCO₃H', x: 365, y: 310, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-c1c2', fromAtomId: 'c1', toAtomId: 'c2', order: 2 },
+          { id: 'b-c1h1', fromAtomId: 'c1', toAtomId: 'h1', order: 1 },
+          { id: 'b-c1h2', fromAtomId: 'c1', toAtomId: 'h2', order: 1 },
+          { id: 'b-c2r1', fromAtomId: 'c2', toAtomId: 'r1', order: 1 },
+          { id: 'b-c2r2', fromAtomId: 'c2', toAtomId: 'r2', order: 1 },
+          { id: 'b-c1o', fromAtomId: 'c1', toAtomId: 'o', order: 1, isForming: true },
+          { id: 'b-c2o', fromAtomId: 'c2', toAtomId: 'o', order: 1, isForming: true },
+        ],
+        arrows: [
+          { id: 'arr-pi1', fromX: 295, fromY: 175, toX: 330, toY: 240, controlX: 300, controlY: 215, arrowType: 'full', color: '#2563eb' },
+          { id: 'arr-pi2', fromX: 435, fromY: 175, toX: 400, toY: 240, controlX: 430, controlY: 215, arrowType: 'full', color: '#2563eb' },
+        ],
+        labels: [
+          { id: 'lbl-but', x: 240, y: 40, text: '"Butterfly" Concerted Transition State', color: '#9333ea', fontSize: 15 },
+          { id: 'lbl-mcpba', x: 280, y: 300, text: 'mCPBA delivers O atom', color: '#ca8a04', fontSize: 13 },
+          { id: 'lbl-syn', x: 530, y: 265, text: 'syn: both C-O bonds form\nfrom same face', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-step', x: 30, y: 290, text: 'Step 1: mCPBA approaches from one face; both C-O bonds form simultaneously (concerted)', color: '#374151', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'mCPBA is the most common peracid for lab-scale epoxidations',
+        '"Butterfly" transition state — both C-O bonds form at the same time',
+        'Concerted mechanism — no carbocation or radical intermediate',
+        'Oxygen is delivered from ONE face of the alkene (top or bottom)',
+        'Electron-rich alkenes react faster (more EDG = faster epoxidation)',
+      ],
+    },
+    {
+      stepNumber: 2,
+      title: 'Epoxide Formation — Syn Stereospecificity',
+      explanation:
+        'As the O-O bond of mCPBA breaks, both C-O bonds form simultaneously from the same face. The result is a 3-membered cyclic ether (epoxide/oxirane). The stereochemical consequence: groups that were CIS on the alkene end up CIS in the epoxide. The oxygen is added SYN to the alkene (same face). For example, cis-2-butene gives the meso epoxide (2R,3S); trans-2-butene gives the chiral (2R,3R) and (2S,3S) enantiomeric pair (racemic from achiral peracid).',
+      svgScene: {
+        viewBox: '0 0 800 300',
+        atoms: [
+          { id: 'c1', element: 'C', x: 300, y: 150, highlight: 'none' },
+          { id: 'c2', element: 'C', x: 460, y: 150, highlight: 'none' },
+          { id: 'o', element: 'O', x: 380, y: 240, highlight: 'forming' },
+          { id: 'h1', element: 'H', x: 260, y: 80, highlight: 'none' },
+          { id: 'h2', element: 'H', x: 220, y: 170, highlight: 'none' },
+          { id: 'r1', element: 'R', x: 525, y: 80, highlight: 'none' },
+          { id: 'r2', element: 'R', x: 525, y: 220, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-c1c2', fromAtomId: 'c1', toAtomId: 'c2', order: 1 },
+          { id: 'b-c1h1', fromAtomId: 'c1', toAtomId: 'h1', order: 1 },
+          { id: 'b-c1h2', fromAtomId: 'c1', toAtomId: 'h2', order: 1 },
+          { id: 'b-c2r1', fromAtomId: 'c2', toAtomId: 'r1', order: 1 },
+          { id: 'b-c2r2', fromAtomId: 'c2', toAtomId: 'r2', order: 1 },
+          { id: 'b-c1o', fromAtomId: 'c1', toAtomId: 'o', order: 1 },
+          { id: 'b-c2o', fromAtomId: 'c2', toAtomId: 'o', order: 1 },
+        ],
+        arrows: [],
+        labels: [
+          { id: 'lbl-epox', x: 250, y: 40, text: 'Epoxide (oxirane) — 3-membered ring', color: '#16a34a', fontSize: 16 },
+          { id: 'lbl-syn', x: 150, y: 260, text: 'O added from same face (syn) → cis groups stay cis', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-strain', x: 470, y: 275, text: '60° ring: highly strained', color: '#dc2626', fontSize: 13 },
+          { id: 'lbl-byp', x: 550, y: 40, text: '+ mCBA (byproduct)', color: '#6b7280', fontSize: 12 },
+          { id: 'lbl-step', x: 30, y: 288, text: 'Step 2: O-O bond breaks heterolytically; both C-O bonds form; epoxide product', color: '#374151', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'Epoxide is a 3-membered cyclic ether — highly strained (60° bond angles)',
+        'CIS substituents on alkene → CIS in epoxide (syn addition of O)',
+        'TRANS substituents on alkene → TRANS in epoxide',
+        'mCBA (meta-chlorobenzoic acid) is the byproduct',
+        'Epoxides are excellent electrophiles — reactive toward nucleophilic ring opening',
+      ],
+    },
+    {
+      stepNumber: 3,
+      title: 'Epoxide Ring Opening by Nucleophile (Acid Conditions)',
+      explanation:
+        'Epoxides are highly reactive because of ring strain (three-membered ring). Under acid conditions (H3O+), the oxygen is protonated first (activating the epoxide), and then the nucleophile (water or other Nu) attacks the more substituted carbon (SN1-like, Markovnikov-type) from the anti face. The product from acid-catalyzed opening of a cyclopentene oxide with H2O is the trans-1,2-diol (anti diol). Two inversions or retention would give specific stereochemistry.',
+      svgScene: {
+        viewBox: '0 0 800 300',
+        atoms: [
+          { id: 'c1', element: 'C', x: 280, y: 150, highlight: 'attack' },
+          { id: 'c2', element: 'C', x: 440, y: 150, highlight: 'leaving' },
+          { id: 'o', element: 'O', x: 360, y: 240, highlight: 'breaking' },
+          { id: 'h1', element: 'H', x: 240, y: 80, highlight: 'none' },
+          { id: 'r1', element: 'R', x: 510, y: 90, highlight: 'none' },
+          { id: 'r2', element: 'R', x: 510, y: 210, highlight: 'none' },
+          { id: 'nu', element: 'Nu⁻', x: 520, y: 60, highlight: 'attack' },
+        ],
+        bonds: [
+          { id: 'b-c1c2', fromAtomId: 'c1', toAtomId: 'c2', order: 1 },
+          { id: 'b-c1h1', fromAtomId: 'c1', toAtomId: 'h1', order: 1 },
+          { id: 'b-c2r1', fromAtomId: 'c2', toAtomId: 'r1', order: 1 },
+          { id: 'b-c2r2', fromAtomId: 'c2', toAtomId: 'r2', order: 1 },
+          { id: 'b-c1o', fromAtomId: 'c1', toAtomId: 'o', order: 1 },
+          { id: 'b-c2o', fromAtomId: 'c2', toAtomId: 'o', order: 1, isBreaking: true },
+          { id: 'b-nu', fromAtomId: 'nu', toAtomId: 'c2', order: 1, isForming: true },
+        ],
+        arrows: [
+          { id: 'arr-nu', fromX: 500, fromY: 80, toX: 470, toY: 130, controlX: 490, controlY: 100, arrowType: 'full', color: '#dc2626' },
+        ],
+        labels: [
+          { id: 'lbl-acid', x: 100, y: 40, text: 'Acid-catalyzed: Nu attacks more substituted C (anti)', color: '#ca8a04', fontSize: 14 },
+          { id: 'lbl-base', x: 100, y: 280, text: 'Base-catalyzed: Nu attacks less substituted C (anti, SN2)', color: '#2563eb', fontSize: 13 },
+          { id: 'lbl-anti', x: 500, y: 50, text: 'Anti attack → trans product', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-step', x: 30, y: 295, text: 'Step 3: Nucleophile opens epoxide anti → trans-diol (if Nu = H₂O)', color: '#374151', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'Acid conditions: protonation activates epoxide → nucleophile attacks more substituted C (anti)',
+        'Base conditions: nucleophile attacks less substituted C (SN2, anti)',
+        'Anti opening: Nu and OH end up trans in the product',
+        'Overall from alkene: epoxidation (syn O delivery) then anti opening = trans-diol',
+        'Compare OsO4 dihydroxylation: gives syn-diol directly',
+      ],
+    },
+    {
+      stepNumber: 4,
+      title: 'Stereochemical Summary: syn Epoxidation + anti Opening = trans Diol',
+      explanation:
+        'The two-step sequence (mCPBA epoxidation then acid-catalyzed ring opening with H2O) converts an alkene to a TRANS-1,2-diol. This is the anti-dihydroxylation pathway. Compare with OsO4/NMO dihydroxylation, which gives the syn (cis) 1,2-diol directly. For cyclohexene: mCPBA gives trans-cyclohexane-1,2-diol (the two OHs on opposite faces). OsO4 gives cis-cyclohexane-1,2-diol. This stereochemical distinction is a classic UCR exam question.',
+      svgScene: {
+        viewBox: '0 0 800 280',
+        atoms: [
+          { id: 'alk1', element: 'C', x: 130, y: 140, highlight: 'none' },
+          { id: 'alk2', element: 'C', x: 260, y: 140, highlight: 'none' },
+          { id: 'e-c1', element: 'C', x: 430, y: 130, highlight: 'none' },
+          { id: 'e-c2', element: 'C', x: 560, y: 130, highlight: 'none' },
+          { id: 'e-o', element: 'O', x: 495, y: 210, highlight: 'none' },
+          { id: 'diol-c1', element: 'C', x: 430, y: 230, highlight: 'none' },
+          { id: 'diol-c2', element: 'C', x: 560, y: 230, highlight: 'none' },
+          { id: 'oh1', element: 'OH', x: 395, y: 180, highlight: 'none' },
+          { id: 'oh2', element: 'OH', x: 595, y: 275, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-alk', fromAtomId: 'alk1', toAtomId: 'alk2', order: 2 },
+          { id: 'b-ec', fromAtomId: 'e-c1', toAtomId: 'e-c2', order: 1 },
+          { id: 'b-ec1o', fromAtomId: 'e-c1', toAtomId: 'e-o', order: 1 },
+          { id: 'b-ec2o', fromAtomId: 'e-c2', toAtomId: 'e-o', order: 1 },
+          { id: 'b-dc', fromAtomId: 'diol-c1', toAtomId: 'diol-c2', order: 1 },
+          { id: 'b-dc1oh', fromAtomId: 'diol-c1', toAtomId: 'oh1', order: 1 },
+          { id: 'b-dc2oh', fromAtomId: 'diol-c2', toAtomId: 'oh2', order: 1 },
+        ],
+        arrows: [
+          { id: 'arr1', fromX: 290, fromY: 130, toX: 405, toY: 130, controlX: 350, controlY: 100, arrowType: 'full', color: '#ca8a04' },
+          { id: 'arr2', fromX: 495, fromY: 220, toX: 495, toY: 220, controlX: 495, controlY: 220, arrowType: 'full', color: '#dc2626' },
+        ],
+        labels: [
+          { id: 'lbl-alkene', x: 100, y: 100, text: 'Alkene', color: '#374151', fontSize: 13 },
+          { id: 'lbl-mcpba', x: 295, y: 100, text: '→ mCPBA →', color: '#ca8a04', fontSize: 13 },
+          { id: 'lbl-epox', x: 430, y: 100, text: 'Epoxide', color: '#ca8a04', fontSize: 13 },
+          { id: 'lbl-h3o', x: 490, y: 250, text: '↓ H₃O⁺/H₂O', color: '#dc2626', fontSize: 13 },
+          { id: 'lbl-trans', x: 370, y: 270, text: 'TRANS diol (anti addition overall)', color: '#dc2626', fontSize: 13 },
+          { id: 'lbl-oso4', x: 100, y: 255, text: 'OsO₄/NMO: syn diol (compare)', color: '#2563eb', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'mCPBA epoxidation: syn addition of O → epoxide',
+        'Acid ring opening of epoxide: anti addition of Nu and OH',
+        'Net: mCPBA + H2O = TRANS-1,2-diol (anti dihydroxylation)',
+        'OsO4 dihydroxylation = cis-1,2-diol (syn dihydroxylation) — compare!',
+        'Exam key: alkene → trans diol uses mCPBA/H3O+; alkene → cis diol uses OsO4',
+      ],
+    },
+  ],
+};

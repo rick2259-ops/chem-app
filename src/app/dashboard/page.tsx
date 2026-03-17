@@ -181,7 +181,15 @@ export default function DashboardPage() {
               })}
             </div>
           )}
-          <Link href="/progress" className="block text-center text-xs text-blue-400 hover:text-blue-300 mt-4 transition-colors">
+          {weakAreas.length > 0 && (
+            <Link
+              href="/drill"
+              className="block text-center text-sm font-medium bg-orange-600 hover:bg-orange-500 text-white rounded-lg py-2 mt-4 transition-colors"
+            >
+              🎯 Start Drill on Weak Areas
+            </Link>
+          )}
+          <Link href="/progress" className="block text-center text-xs text-blue-400 hover:text-blue-300 mt-3 transition-colors">
             View all weak areas →
           </Link>
         </div>
@@ -197,7 +205,8 @@ export default function DashboardPage() {
               { href: '/reactions', icon: '🧪', label: 'Reactions', desc: 'Reference sheet', color: 'hover:border-teal-500/50 hover:bg-teal-600/10' },
               { href: '/exam', icon: '📝', label: 'Practice Exam', desc: 'Timed mock exams', color: 'hover:border-red-500/50 hover:bg-red-600/10' },
               { href: '/synthesis', icon: '🔬', label: 'Synthesis', desc: 'AI-generated problems', color: 'hover:border-violet-500/50 hover:bg-violet-600/10' },
-              { href: '/tutor', icon: '🤖', label: 'AI Tutor', desc: 'Ask anything', color: 'hover:border-orange-500/50 hover:bg-orange-600/10' },
+              { href: '/drill', icon: '🎯', label: 'Drill Mode', desc: 'Target weak spots', color: 'hover:border-orange-500/50 hover:bg-orange-600/10' },
+              { href: '/tutor', icon: '🤖', label: 'AI Tutor', desc: 'Ask anything', color: 'hover:border-yellow-500/50 hover:bg-yellow-600/10' },
             ].map(action => (
               <Link
                 key={action.href}

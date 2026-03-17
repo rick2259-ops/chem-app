@@ -3,6 +3,9 @@ import { reagentCards, reagentsDeck } from './reagents';
 import { namedReactionCards, namedReactionsDeck } from './named-reactions';
 import { stereochemistryCards, stereochemistryDeck } from './stereochemistry';
 import { chem008cCards, chem008cDeck } from './chem008c';
+import { sn1Sn2E1E2Cards, sn1Sn2E1E2Deck } from './sn1-sn2-e1-e2';
+import { alkyneCards, alkynesDeck } from './alkynes';
+import { amineCards, aminesDeck } from './amines';
 import { Flashcard, Deck } from '@/types/flashcard';
 
 export const allDecks: Deck[] = [
@@ -11,6 +14,9 @@ export const allDecks: Deck[] = [
   namedReactionsDeck,
   stereochemistryDeck,
   chem008cDeck,
+  sn1Sn2E1E2Deck,
+  alkynesDeck,
+  aminesDeck,
 ];
 
 export const deckMap: Record<string, Deck> = {
@@ -19,6 +25,9 @@ export const deckMap: Record<string, Deck> = {
   'named-reactions': namedReactionsDeck,
   'stereochemistry': stereochemistryDeck,
   'chem008c': chem008cDeck,
+  'sn1-sn2-e1-e2': sn1Sn2E1E2Deck,
+  'alkynes': alkynesDeck,
+  'amines': aminesDeck,
 };
 
 export const allCards: Flashcard[] = [
@@ -27,6 +36,9 @@ export const allCards: Flashcard[] = [
   ...namedReactionCards,
   ...stereochemistryCards,
   ...chem008cCards,
+  ...sn1Sn2E1E2Cards,
+  ...alkyneCards,
+  ...amineCards,
 ];
 
 export const cardMap: Record<string, Flashcard> = Object.fromEntries(
@@ -60,4 +72,10 @@ export {
   stereochemistryDeck,
   chem008cCards,
   chem008cDeck,
+  sn1Sn2E1E2Cards,
+  sn1Sn2E1E2Deck,
+  alkyneCards,
+  alkynesDeck,
+  amineCards,
+  aminesDeck,
 };

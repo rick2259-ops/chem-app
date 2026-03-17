@@ -12,12 +12,13 @@ type CourseSelection = CourseId | 'ALL';
 type QuestionCount = 10 | 20 | 30;
 type TimeLimitMinutes = 30 | 50 | null; // null = no timer
 
-type ExamState = 'config' | 'exam' | 'results';
+type ExamState = 'config' | 'exam' | 'grading' | 'results';
 
 interface ExamAnswer {
   selectedIndex?: number;   // for multiple-choice
   textAnswer?: string;      // for short-answer
   flagged: boolean;
+  aiResult?: { isCorrect: boolean; score: number; feedback: string };
 }
 
 interface TopicBreakdown {
@@ -196,8 +197,8 @@ function ConfigScreen({
             </svg>
             <p className="text-amber-200/80 text-xs leading-relaxed">
               This exam simulates UCR Organic Chemistry exam conditions. Questions are randomly selected
-              from the course question bank. Short-answer questions will be flagged for manual review
-              since auto-grading requires AI assistance.
+              from the course question bank. Short-answer questions are automatically graded by AI
+              after you submit — results are ready in seconds.
             </p>
           </div>
 
@@ -471,8 +472,8 @@ function ExamScreen({
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-2">
                   Your Answer
-                  <span className="ml-2 text-xs bg-slate-700 text-slate-400 px-2 py-0.5 rounded-full">
-                    Free response — marked for manual review
+                  <span className="ml-2 text-xs bg-blue-900/50 text-blue-300 px-2 py-0.5 rounded-full">
+                    Free response — AI graded on submit
                   </span>
                 </label>
                 <textarea
@@ -578,6 +579,9 @@ function ResultsScreen({
   const graded = questions.map((q, i) => {
     const a = answers[i];
     if (q.type === 'short-answer') {
+      if (a.aiResult) {
+        return { correct: a.aiResult.isCorrect, manualReview: false };
+      }
       return { correct: false, manualReview: true };
     }
     const hasAnswer = a.selectedIndex !== undefined;
@@ -692,7 +696,7 @@ function ResultsScreen({
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" />
                     </svg>
-                    Manual Review Required
+                    Not graded
                   </>
                 ) : g.correct ? (
                   <>
@@ -756,7 +760,7 @@ function ResultsScreen({
                 </div>
               )}
 
-              {/* Short answer: show what they wrote */}
+              {/* Short answer: show what they wrote + AI feedback */}
               {q.type === 'short-answer' && (
                 <div className="mb-5 space-y-3">
                   <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
@@ -765,6 +769,15 @@ function ResultsScreen({
                       {a.textAnswer?.trim() ? a.textAnswer : <span className="text-slate-600 italic">No answer provided</span>}
                     </p>
                   </div>
+                  {a.aiResult && (
+                    <div className={`rounded-xl p-4 border ${a.aiResult.isCorrect ? 'bg-green-600/10 border-green-500/30' : 'bg-amber-600/10 border-amber-500/30'}`}>
+                      <div className={`text-xs mb-1.5 font-medium uppercase tracking-wide flex items-center gap-2 ${a.aiResult.isCorrect ? 'text-green-400' : 'text-amber-400'}`}>
+                        <span>{a.aiResult.isCorrect ? '✓' : '~'}</span>
+                        AI Grade: {a.aiResult.score}/100 — {a.aiResult.isCorrect ? 'Correct' : 'Needs Improvement'}
+                      </div>
+                      <p className="text-slate-300 text-sm leading-relaxed">{a.aiResult.feedback}</p>
+                    </div>
+                  )}
                   {q.correctAnswer && (
                     <div className="bg-green-600/10 border border-green-500/30 rounded-xl p-4">
                       <div className="text-xs text-green-400 mb-1.5 font-medium uppercase tracking-wide">Sample Answer</div>
@@ -836,7 +849,7 @@ function ResultsScreen({
           {[
             { label: 'Correct', value: correctCount, color: 'text-green-400' },
             { label: 'Incorrect', value: gradableCount - correctCount, color: 'text-red-400' },
-            { label: 'Manual Review', value: manualCount, color: 'text-slate-400' },
+            { label: manualCount > 0 ? 'Manual Review' : 'AI Graded', value: manualCount > 0 ? manualCount : questions.filter(q => q.type === 'short-answer').length, color: manualCount > 0 ? 'text-amber-400' : 'text-blue-400' },
           ].map(stat => (
             <div key={stat.label} className="bg-slate-800 rounded-xl border border-slate-700 p-4 text-center">
               <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
@@ -961,9 +974,39 @@ export default function ExamPage() {
     });
   }, []);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    setExamState('grading');
+
+    const updatedAnswers = [...answers];
+    const gradingTasks = questions.map(async (q, i) => {
+      if (q.type !== 'short-answer') return;
+      const textAnswer = answers[i].textAnswer?.trim();
+      if (!textAnswer) {
+        updatedAnswers[i] = { ...updatedAnswers[i], aiResult: { isCorrect: false, score: 0, feedback: 'No answer provided.' } };
+        return;
+      }
+      try {
+        const res = await fetch('/api/tutor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gradingMode: true,
+            question: q.prompt,
+            correctAnswer: q.correctAnswer,
+            studentAnswer: textAnswer,
+          }),
+        });
+        const data = await res.json();
+        updatedAnswers[i] = { ...updatedAnswers[i], aiResult: { isCorrect: data.isCorrect, score: data.score, feedback: data.feedback } };
+      } catch {
+        updatedAnswers[i] = { ...updatedAnswers[i], aiResult: { isCorrect: false, score: 0, feedback: 'Could not grade — see sample answer for comparison.' } };
+      }
+    });
+
+    await Promise.all(gradingTasks);
+    setAnswers(updatedAnswers);
     setExamState('results');
-  }, []);
+  }, [questions, answers]);
 
   const handleRetake = useCallback(() => {
     setQuestions([]);
@@ -985,6 +1028,21 @@ export default function ExamPage() {
         onFlagToggle={handleFlagToggle}
         onSubmit={handleSubmit}
       />
+    );
+  }
+
+  if (examState === 'grading') {
+    const saCount = questions.filter(q => q.type === 'short-answer' && answers[questions.indexOf(q)].textAnswer?.trim()).length;
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 max-w-sm w-full text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-5" />
+          <div className="text-white font-semibold text-lg mb-2">Grading your exam...</div>
+          <div className="text-slate-400 text-sm">
+            AI is reviewing {saCount} short-answer question{saCount !== 1 ? 's' : ''}. This takes a few seconds.
+          </div>
+        </div>
+      </div>
     );
   }
 

@@ -1,0 +1,185 @@
+import { Mechanism } from '@/types/mechanism';
+
+export const hydroborationOxidationMechanism: Mechanism = {
+  id: 'hydroboration-oxidation',
+  name: 'Hydroboration-Oxidation',
+  courseId: 'CHEM008B',
+  topicId: 'alkene-addition',
+  reactionType: 'addition',
+  overview:
+    'Hydroboration-oxidation converts an alkene to an alcohol with anti-Markovnikov regioselectivity and syn stereochemistry. Step 1 (hydroboration): BH3 adds across the double bond in a concerted, syn fashion — B goes to the less substituted carbon (anti-Markovnikov). Step 2 (oxidation): H2O2/NaOH replaces B with OH with retention of configuration. Net result: anti-Markovnikov, syn addition of H and OH across the alkene.',
+  steps: [
+    {
+      stepNumber: 1,
+      title: 'BH3 Approaches the Alkene (4-Membered Cyclic TS)',
+      explanation:
+        'BH3 (or THF·BH3) approaches the pi bond of the alkene. The empty p-orbital of B interacts with the pi electrons. The reaction proceeds through a 4-membered cyclic transition state in which B and H are both delivered to the same face of the double bond simultaneously — this is what makes it SYN addition. B is sterically directed to the LESS substituted carbon (anti-Markovnikov) to minimize steric interactions with the larger substituents.',
+      svgScene: {
+        viewBox: '0 0 800 320',
+        atoms: [
+          { id: 'c1', element: 'C', x: 280, y: 160, highlight: 'attack' },
+          { id: 'c2', element: 'C', x: 440, y: 160, highlight: 'none' },
+          { id: 'h1', element: 'H', x: 260, y: 90, highlight: 'none' },
+          { id: 'h2', element: 'H', x: 210, y: 180, highlight: 'none' },
+          { id: 'r1', element: 'R', x: 510, y: 100, highlight: 'none' },
+          { id: 'r2', element: 'R', x: 510, y: 220, highlight: 'none' },
+          { id: 'b', element: 'B', x: 360, y: 270, highlight: 'attack' },
+          { id: 'hb', element: 'H', x: 290, y: 270, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-c1c2', fromAtomId: 'c1', toAtomId: 'c2', order: 2 },
+          { id: 'b-c1h1', fromAtomId: 'c1', toAtomId: 'h1', order: 1 },
+          { id: 'b-c1h2', fromAtomId: 'c1', toAtomId: 'h2', order: 1 },
+          { id: 'b-c2r1', fromAtomId: 'c2', toAtomId: 'r1', order: 1 },
+          { id: 'b-c2r2', fromAtomId: 'c2', toAtomId: 'r2', order: 1 },
+          { id: 'b-b-hb', fromAtomId: 'b', toAtomId: 'hb', order: 1 },
+          { id: 'b-c1b', fromAtomId: 'c1', toAtomId: 'b', order: 1, isForming: true },
+          { id: 'b-c2hb', fromAtomId: 'c2', toAtomId: 'hb', order: 1, isForming: true },
+        ],
+        arrows: [
+          { id: 'arr-pi', fromX: 360, fromY: 160, toX: 360, toY: 250, controlX: 340, controlY: 210, arrowType: 'full', color: '#2563eb' },
+        ],
+        labels: [
+          { id: 'lbl-bh3', x: 380, y: 290, text: 'BH₃', color: '#ca8a04', fontSize: 15 },
+          { id: 'lbl-syn', x: 150, y: 60, text: 'Syn addition (both same face)', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-anti', x: 500, y: 280, text: 'B → less substituted C', color: '#2563eb', fontSize: 13 },
+          { id: 'lbl-step', x: 30, y: 305, text: 'Step 1: BH₃ approaches alkene; 4-membered cyclic TS; syn addition begins', color: '#374151', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'BH3 approaches the pi bond face-on (same face as H delivery)',
+        '4-membered cyclic transition state — concerted, no ionic intermediate',
+        'B adds to LESS substituted carbon (anti-Markovnikov) — steric control',
+        'Both B and H add to the same face — syn addition',
+        'Regioselectivity opposite to HX (Markovnikov) addition',
+      ],
+    },
+    {
+      stepNumber: 2,
+      title: 'Trialkylborane Intermediate',
+      explanation:
+        'After hydroboration, the product is a trialkylborane (R3B) — three alkyl groups attached to boron. The boron is at the less substituted carbon, and the H that was added is at the more substituted carbon (anti-Markovnikov). Both B and H are on the same face of the original alkene (syn addition). The C-B bond is now a sigma bond. This trialkylborane is the intermediate that will be oxidized in step 3.',
+      svgScene: {
+        viewBox: '0 0 800 300',
+        atoms: [
+          { id: 'c1', element: 'C', x: 300, y: 160, highlight: 'none' },
+          { id: 'c2', element: 'C', x: 460, y: 160, highlight: 'none' },
+          { id: 'h1', element: 'H', x: 280, y: 90, highlight: 'none' },
+          { id: 'h2', element: 'H', x: 230, y: 180, highlight: 'none' },
+          { id: 'r1', element: 'R', x: 530, y: 100, highlight: 'none' },
+          { id: 'r2', element: 'R', x: 530, y: 220, highlight: 'none' },
+          { id: 'b', element: 'BR₂', x: 300, y: 250, highlight: 'none' },
+          { id: 'hnew', element: 'H', x: 460, y: 230, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-c1c2', fromAtomId: 'c1', toAtomId: 'c2', order: 1 },
+          { id: 'b-c1h1', fromAtomId: 'c1', toAtomId: 'h1', order: 1 },
+          { id: 'b-c1h2', fromAtomId: 'c1', toAtomId: 'h2', order: 1 },
+          { id: 'b-c2r1', fromAtomId: 'c2', toAtomId: 'r1', order: 1 },
+          { id: 'b-c2r2', fromAtomId: 'c2', toAtomId: 'r2', order: 1 },
+          { id: 'b-c1b', fromAtomId: 'c1', toAtomId: 'b', order: 1 },
+          { id: 'b-c2hnew', fromAtomId: 'c2', toAtomId: 'hnew', order: 1 },
+        ],
+        arrows: [],
+        labels: [
+          { id: 'lbl-int', x: 250, y: 40, text: 'Trialkylborane intermediate (R₃B)', color: '#ca8a04', fontSize: 15 },
+          { id: 'lbl-b-pos', x: 140, y: 265, text: 'B at less substituted C', color: '#2563eb', fontSize: 13 },
+          { id: 'lbl-syn-note', x: 400, y: 290, text: 'B and H on same face (syn)', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-step', x: 30, y: 25, text: 'Step 2: Trialkylborane formed — C-B at less sub. C; ready for oxidation', color: '#374151', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'Trialkylborane (R3B) is the intermediate after hydroboration',
+        'Boron is at the less substituted (terminal) carbon',
+        'B and H are on the same face — syn relationship',
+        'The C-B bond will be replaced by C-OH in the next step',
+        'Boron can be replaced by OH with RETENTION of configuration (stereospecific)',
+      ],
+    },
+    {
+      stepNumber: 3,
+      title: 'Oxidation: H2O2 / NaOH — Peroxide Attack on Boron',
+      explanation:
+        'In basic conditions, HOO⁻ (hydroperoxide anion, from H2O2 + NaOH) attacks the electrophilic boron. This forms a tetrahedral boron intermediate. The key step follows: a 1,2-migration in which the alkyl group migrates from B to O with retention of configuration at carbon (the migrating carbon keeps its original stereochemistry). This is a boron-to-oxygen 1,2-shift.',
+      svgScene: {
+        viewBox: '0 0 800 320',
+        atoms: [
+          { id: 'c1', element: 'C', x: 300, y: 160, highlight: 'none' },
+          { id: 'b', element: 'B', x: 300, y: 260, highlight: 'breaking' },
+          { id: 'o1', element: 'O', x: 420, y: 260, highlight: 'attack' },
+          { id: 'o2', element: 'O', x: 540, y: 260, highlight: 'none' },
+          { id: 'h3', element: 'H', x: 600, y: 260, highlight: 'none' },
+          { id: 'r', element: 'R₂', x: 200, y: 260, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-c1b', fromAtomId: 'c1', toAtomId: 'b', order: 1, isBreaking: true },
+          { id: 'b-br', fromAtomId: 'b', toAtomId: 'r', order: 1 },
+          { id: 'b-bo', fromAtomId: 'b', toAtomId: 'o1', order: 1, isForming: true },
+          { id: 'b-oo', fromAtomId: 'o1', toAtomId: 'o2', order: 1 },
+          { id: 'b-oh', fromAtomId: 'o2', toAtomId: 'h3', order: 1 },
+        ],
+        arrows: [
+          { id: 'arr-hoo', fromX: 560, fromY: 240, toX: 440, toY: 250, controlX: 500, controlY: 220, arrowType: 'full', color: '#dc2626' },
+          { id: 'arr-cb', fromX: 320, fromY: 200, toX: 380, toY: 250, controlX: 350, controlY: 220, arrowType: 'full', color: '#2563eb' },
+        ],
+        labels: [
+          { id: 'lbl-hoo', x: 560, y: 220, text: 'HOO⁻', color: '#dc2626', fontSize: 15 },
+          { id: 'lbl-attack', x: 430, y: 240, text: 'O attacks B', color: '#dc2626', fontSize: 13 },
+          { id: 'lbl-migr', x: 150, y: 130, text: '→ C migrates B to O\n(retention at C)', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-step', x: 30, y: 305, text: 'Step 3: HOO⁻ attacks B → 1,2-alkyl shift from B to O with retention of config at C', color: '#374151', fontSize: 12 },
+        ],
+      },
+      keyPoints: [
+        'HOO⁻ (hydroperoxide) attacks the electrophilic boron atom',
+        '1,2-alkyl shift from B to O — carbon migrates with its bonding electrons',
+        'RETENTION of configuration at the migrating carbon (stereospecific)',
+        'This retention + syn hydroboration = overall syn addition of H and OH',
+        'Boron ends up as borate ester (B-OR)',
+      ],
+    },
+    {
+      stepNumber: 4,
+      title: 'Hydrolysis: Borate Ester → Alcohol (Anti-Markovnikov Product)',
+      explanation:
+        'The borate ester intermediate (C-O-B) is hydrolyzed in basic aqueous conditions (NaOH, H2O). The B-O bond breaks and is replaced by O-H, releasing the alkyl group as an alcohol (C-OH) and borate (B(OH)3 or B(OH)4⁻). The final product is an anti-Markovnikov alcohol with syn stereochemistry: OH is at the less substituted carbon, on the same face as the original H addition.',
+      svgScene: {
+        viewBox: '0 0 800 280',
+        atoms: [
+          { id: 'c1', element: 'C', x: 250, y: 150, highlight: 'none' },
+          { id: 'c2', element: 'C', x: 410, y: 150, highlight: 'none' },
+          { id: 'h1', element: 'H', x: 230, y: 80, highlight: 'none' },
+          { id: 'h2', element: 'H', x: 180, y: 170, highlight: 'none' },
+          { id: 'oh', element: 'OH', x: 250, y: 235, highlight: 'forming' },
+          { id: 'r1', element: 'R', x: 480, y: 90, highlight: 'none' },
+          { id: 'r2', element: 'R', x: 480, y: 210, highlight: 'none' },
+          { id: 'hnew', element: 'H', x: 410, y: 220, highlight: 'none' },
+          { id: 'boh3', element: 'B(OH)₃', x: 620, y: 200, highlight: 'none' },
+        ],
+        bonds: [
+          { id: 'b-c1c2', fromAtomId: 'c1', toAtomId: 'c2', order: 1 },
+          { id: 'b-c1h1', fromAtomId: 'c1', toAtomId: 'h1', order: 1 },
+          { id: 'b-c1h2', fromAtomId: 'c1', toAtomId: 'h2', order: 1 },
+          { id: 'b-c2r1', fromAtomId: 'c2', toAtomId: 'r1', order: 1 },
+          { id: 'b-c2r2', fromAtomId: 'c2', toAtomId: 'r2', order: 1 },
+          { id: 'b-c1oh', fromAtomId: 'c1', toAtomId: 'oh', order: 1 },
+          { id: 'b-c2hnew', fromAtomId: 'c2', toAtomId: 'hnew', order: 1 },
+        ],
+        arrows: [],
+        labels: [
+          { id: 'lbl-prod', x: 150, y: 40, text: 'Anti-Markovnikov Alcohol (Product)', color: '#16a34a', fontSize: 16 },
+          { id: 'lbl-oh', x: 130, y: 248, text: 'OH at less substituted C', color: '#16a34a', fontSize: 13 },
+          { id: 'lbl-syn', x: 350, y: 265, text: 'H and OH on same face (syn)', color: '#9333ea', fontSize: 13 },
+          { id: 'lbl-byp', x: 570, y: 180, text: '+ B(OH)₃', color: '#6b7280', fontSize: 13 },
+          { id: 'lbl-sum', x: 30, y: 265, text: 'Overall: anti-Markovnikov + syn addition. Contrast: H₂O/H⁺/HgSO₄ = Markovnikov. Hydroboration = anti-Markovnikov.', color: '#374151', fontSize: 11 },
+        ],
+      },
+      keyPoints: [
+        'Borate ester hydrolyzed by NaOH/H2O → alcohol + B(OH)3',
+        'OH ends up at the LESS substituted carbon (anti-Markovnikov)',
+        'H and OH on the SAME face (syn addition overall)',
+        'Net: H and OH both add to same face, H to more substituted, OH to less substituted',
+        'Complementary to oxymercuration (Markovnikov, anti) and acid hydration (Markovnikov, no stereo)',
+      ],
+    },
+  ],
+};
