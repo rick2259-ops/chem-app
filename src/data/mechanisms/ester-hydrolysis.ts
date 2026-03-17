@@ -5,7 +5,7 @@ export const esterHydrolysisMechanism: Mechanism = {
   name: 'Base-Catalyzed Ester Hydrolysis (Saponification)',
   courseId: 'CHEM008B',
   topicId: 'carboxylic-acids',
-  reactionType: 'nucleophilic-acyl-substitution',
+  reactionType: 'carbonyl',
   overview:
     'Base-catalyzed ester hydrolysis (saponification) is an irreversible nucleophilic acyl substitution reaction in which a hydroxide ion (OH⁻) attacks the electrophilic carbonyl carbon of an ester (RCOOR\'). The mechanism proceeds through a tetrahedral intermediate, followed by expulsion of the alkoxide leaving group (OR\'⁻) and re-formation of the C=O double bond. The products are a carboxylate anion (RCOO⁻, resonance-stabilized) and an alcohol (R\'OH). Because the carboxylate product is resonance-stabilized and does not react further with OH⁻ under normal conditions, the reaction is thermodynamically driven to completion (unlike acid-catalyzed ester hydrolysis, which is reversible). This mechanism is also the basis of soap-making (saponification of triglycerides).',
   steps: [
