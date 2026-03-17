@@ -145,6 +145,90 @@ LENGTH: Comprehensive but not overwhelming — aim for thorough coverage of all 
 FORMAT: Use markdown headers, bullet points, bold for key terms when first introduced.`;
 }
 
+export function buildFlashcardGenerationPrompt(
+  deckTitle: string,
+  deckDescription: string,
+  count: number,
+  existingFronts: string[]
+): string {
+  const existing = existingFronts.slice(0, 20).map((f, i) => `${i + 1}. ${f}`).join('\n');
+  return `Generate ${count} NEW organic chemistry flashcards for a UCR CHEM 008 student studying "${deckTitle}".
+
+DECK FOCUS: ${deckDescription}
+
+ALREADY COVERED (do NOT duplicate these concepts):
+${existing}
+
+Return ONLY a valid JSON array with exactly ${count} objects. No markdown, no explanation, just the array.
+
+Each object must have exactly these fields:
+{
+  "front": "clear question or prompt (1-2 sentences max)",
+  "back": "concise answer with key details (2-4 sentences max)",
+  "hint": "optional memory trick or context (1 sentence, or empty string)"
+}
+
+Rules:
+- Questions must be exam-relevant for UCR CHEM 008A/B/C
+- Cover different sub-topics within the deck's focus
+- Back answers should be precise and include any key formulas inline (e.g., RCHO)
+- Vary question styles: definitions, mechanisms, comparisons, predictions
+- Difficulty should range from basic to challenging
+- No duplicate concepts from the existing list above`;
+}
+
+export function buildSynthesisPrompt(
+  courseId: string,
+  difficulty: 'easy' | 'medium' | 'hard'
+): string {
+  const difficultyRules: Record<string, string> = {
+    easy: '2 steps total, use only single reaction types covered in the specified course, common everyday reagents (NaBH4, HBr, H2SO4, etc.), no stereochemical complexity, straightforward functional group interconversions',
+    medium: '3 steps total, may cross reaction types (e.g., oxidation then substitution), introduce some stereochemical consideration (Markovnikov, anti-addition, etc.), moderate reagent complexity',
+    hard: '4-5 steps total, protecting groups may be required, retrosynthetic thinking is essential, stereochemical requirements must be met (specific enantiomers or diastereomers), multi-functional molecule targets',
+  };
+
+  const courseScope: Record<string, string> = {
+    '008A': 'Structure, bonding, stereochemistry, SN1/SN2 substitution, E1/E2 elimination — focus reactions in this scope',
+    '008B': 'Alkene/alkyne additions, oxidation/reduction, NMR spectroscopy, carbonyl chemistry (aldehydes, ketones, carboxylic acids) — focus reactions in this scope',
+    '008C': 'Aromatic chemistry (EAS/NAS), amines, carbohydrates, amino acids, lipids, Diels-Alder reaction — focus reactions in this scope',
+  };
+
+  return `You are an expert organic chemistry problem designer for UCR's CHEM ${courseId} course.
+
+Generate a single synthesis problem at ${difficulty.toUpperCase()} difficulty.
+
+COURSE SCOPE FOR ${courseId}: ${courseScope[courseId] ?? 'General organic chemistry reactions'}
+
+DIFFICULTY REQUIREMENTS (${difficulty}): ${difficultyRules[difficulty]}
+
+The problem must be chemically realistic and pedagogically sound. The synthesis route must actually work with the reagents listed.
+
+Return ONLY a valid JSON object — no markdown code fences, no explanation text, no preamble. Just the raw JSON object.
+
+The JSON must match this exact structure:
+{
+  "title": "short problem title (e.g., 'Synthesis of Ibuprofen Precursor')",
+  "startingMaterial": "IUPAC name and brief structural description (e.g., 'propan-1-ol — a primary alcohol, CH3CH2CH2OH')",
+  "targetMolecule": "IUPAC name and brief structural description of the target product",
+  "numSteps": <integer matching difficulty rules above>,
+  "context": "1-2 sentences of real-world relevance — connect this synthesis to a drug, natural product, industrial chemical, or biological molecule",
+  "hints": [
+    "Hint 1: think about the functional group transformation needed in the first step...",
+    "Hint 2: consider what reagent selectively does X without affecting Y...",
+    "Hint 3: retrosynthetically, the target contains a Z group which suggests..."
+  ],
+  "solution": [
+    {"step": 1, "reagents": "exact reagents and solvents (e.g., NaBH4, MeOH, 0°C)", "reactionType": "Reaction class name (e.g., Reduction, SN2, Aldol)", "product": "name/description of intermediate product formed"},
+    {"step": 2, "reagents": "...", "reactionType": "...", "product": "..."}
+  ],
+  "explanation": "2-3 sentence summary of the overall synthetic strategy — why these steps were chosen in this order, any key selectivity considerations"
+}
+
+Rules for the hints array: provide exactly 3 hints regardless of difficulty. Hints should be progressive — Hint 1 is the gentlest nudge, Hint 3 nearly gives it away.
+Rules for the solution array: number of objects must match numSteps exactly.
+The synthesis must be completable using reagents and reactions appropriate for ${courseId} at ${difficulty} difficulty.`;
+}
+
 export function buildGradingPrompt(
   question: string,
   correctAnswer: string,

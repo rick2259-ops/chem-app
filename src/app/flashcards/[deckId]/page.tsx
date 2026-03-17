@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { getDeck, getCardsForDeck } from '@/data/flashcards';
 import { getDueCards, reviewCard, createNewSRSCard } from '@/lib/srs/scheduler';
 import { useProgress } from '@/hooks/useProgress';
+import { useCustomCards } from '@/hooks/useCustomCards';
 import { Flashcard } from '@/types/flashcard';
 
 type Rating = 0 | 1 | 2 | 3;
@@ -25,7 +26,6 @@ function CardAIPanel({ mode, card, label, icon, borderColor, textColor, bgColor 
   const [isLoading, setIsLoading] = useState(false);
   const hasFetched = useRef(false);
 
-  // Reset when card changes
   useEffect(() => {
     setIsOpen(false);
     setText('');
@@ -107,6 +107,111 @@ function CardAIPanel({ mode, card, label, icon, borderColor, textColor, bgColor 
   );
 }
 
+// AI card generator panel
+function GenerateCardsPanel({ deck, existingCards, onGenerated }: {
+  deck: { id: string; title: string; description: string };
+  existingCards: Flashcard[];
+  onGenerated: (cards: Flashcard[]) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [count, setCount] = useState(5);
+  const [error, setError] = useState('');
+  const [lastGenerated, setLastGenerated] = useState(0);
+
+  const handleGenerate = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const existingFronts = existingCards.map(c => c.front.text);
+      const res = await fetch('/api/tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flashcardGenerateMode: true,
+          generateDeckTitle: deck.title,
+          generateDeckDescription: deck.description,
+          generateCount: count,
+          generateExistingFronts: existingFronts,
+        }),
+      });
+      const text = await res.text();
+      // Extract JSON array from response (Claude may wrap in markdown)
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error('Invalid response');
+      const raw: { front: string; back: string; hint?: string }[] = JSON.parse(jsonMatch[0]);
+
+      const newCards: Flashcard[] = raw.map((item, i) => ({
+        id: `ai-${deck.id}-${Date.now()}-${i}`,
+        deckId: deck.id,
+        category: 'functional-group' as const,
+        front: { text: item.front, hint: item.hint || undefined },
+        back: { text: item.back },
+        tags: ['ai-generated', deck.id],
+      }));
+
+      onGenerated(newCards);
+      setLastGenerated(newCards.length);
+      setIsOpen(false);
+    } catch {
+      setError('Generation failed. Try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <button
+        onClick={() => setIsOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all text-sm font-medium"
+      >
+        <span>✨</span>
+        Generate AI Cards
+        {lastGenerated > 0 && (
+          <span className="bg-violet-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">+{lastGenerated} added</span>
+        )}
+        <span className="ml-auto text-slate-500">{isOpen ? '▲' : '▼'}</span>
+      </button>
+
+      {isOpen && (
+        <div className="mt-2 bg-slate-800 border border-violet-500/30 rounded-xl p-4 animate-fadeInUp">
+          <p className="text-slate-300 text-sm mb-3">
+            Claude will generate new cards unique to this deck, avoiding topics already covered.
+          </p>
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-slate-400 text-sm">How many cards?</span>
+            {[3, 5, 10].map(n => (
+              <button
+                key={n}
+                onClick={() => setCount(n)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${count === n ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
+          <button
+            onClick={handleGenerate}
+            disabled={isLoading}
+            className="w-full py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Generating {count} cards...
+              </>
+            ) : (
+              `✨ Generate ${count} Cards`
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ratingConfig: { rating: Rating; label: string; color: string; desc: string }[] = [
   { rating: 0, label: 'Again', color: 'bg-red-600 hover:bg-red-500', desc: 'Forgot completely' },
   { rating: 1, label: 'Hard', color: 'bg-orange-600 hover:bg-orange-500', desc: 'With difficulty' },
@@ -117,7 +222,6 @@ const ratingConfig: { rating: Rating; label: string; color: string; desc: string
 function FlashCard({ card, isFlipped, onFlip }: { card: Flashcard; isFlipped: boolean; onFlip: () => void }) {
   return (
     <div className="w-full">
-      {/* Card flip area */}
       <div className="flashcard-container w-full" style={{ height: '260px' }} onClick={onFlip}>
         <div className={`flashcard-inner w-full h-full cursor-pointer relative ${isFlipped ? 'flipped' : ''}`}>
           {/* Front */}
@@ -138,6 +242,9 @@ function FlashCard({ card, isFlipped, onFlip }: { card: Flashcard; isFlipped: bo
               <div className="mt-3 bg-slate-700 rounded-lg px-4 py-2 font-mono text-green-300 text-lg">
                 {card.back.formula}
               </div>
+            )}
+            {card.tags?.includes('ai-generated') && (
+              <div className="mt-3 text-xs text-violet-400 opacity-60">✨ AI Generated</div>
             )}
           </div>
         </div>
@@ -177,6 +284,7 @@ export default function FlashcardStudyPage({
 }) {
   const { deckId } = use(params);
   const { progress, updateProgress } = useProgress();
+  const { customCards, addCards } = useCustomCards(deckId);
   const [isFlipped, setIsFlipped] = useState(false);
   const [cardIndex, setCardIndex] = useState(0);
   const [sessionRatings, setSessionRatings] = useState<Rating[]>([]);
@@ -185,7 +293,8 @@ export default function FlashcardStudyPage({
   const [initialized, setInitialized] = useState(false);
 
   const deck = getDeck(deckId);
-  const allCards = deck ? getCardsForDeck(deckId) : [];
+  const staticCards = deck ? getCardsForDeck(deckId) : [];
+  const allCards = [...staticCards, ...customCards];
 
   useEffect(() => {
     if (!initialized && allCards.length > 0) {
@@ -193,7 +302,14 @@ export default function FlashcardStudyPage({
       setStudyCards(due.length > 0 ? due : allCards.map(c => c.id));
       setInitialized(true);
     }
-  }, [initialized, allCards, progress.srsCards]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, staticCards.length, customCards.length, progress.srsCards]);
+
+  const handleGenerated = (newCards: Flashcard[]) => {
+    addCards(newCards);
+    // Add new cards to current study session
+    setStudyCards(prev => [...prev, ...newCards.map(c => c.id)]);
+  };
 
   if (!deck) {
     return (
@@ -248,9 +364,9 @@ export default function FlashcardStudyPage({
         <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 max-w-md w-full text-center">
           <div className="text-5xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-white mb-2">Session Complete!</h2>
-          <p className="text-slate-400 mb-8">{deck.title}</p>
+          <p className="text-slate-400 mb-6">{deck.title}</p>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-slate-700 rounded-xl p-4">
               <div className="text-2xl font-bold text-white">{studyCards.length}</div>
               <div className="text-slate-400 text-xs mt-1">Cards studied</div>
@@ -267,6 +383,22 @@ export default function FlashcardStudyPage({
               </div>
               <div className="text-slate-400 text-xs mt-1">To review again</div>
             </div>
+          </div>
+
+          {/* Generate more cards on completion */}
+          <div className="mb-6">
+            <GenerateCardsPanel
+              deck={deck}
+              existingCards={allCards}
+              onGenerated={(newCards) => {
+                addCards(newCards);
+                setStudyCards(newCards.map(c => c.id));
+                setCardIndex(0);
+                setSessionRatings([]);
+                setIsFlipped(false);
+                setIsComplete(false);
+              }}
+            />
           </div>
 
           <div className="space-y-3">
@@ -308,17 +440,29 @@ export default function FlashcardStudyPage({
   return (
     <div className="p-8 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <Link href="/flashcards" className="text-slate-400 hover:text-white text-sm transition-colors">
           ← {deck.title}
         </Link>
         <span className="text-slate-400 text-sm">
           Card {cardIndex + 1} of {studyCards.length}
+          {customCards.length > 0 && (
+            <span className="ml-2 text-violet-400 text-xs">({customCards.length} AI)</span>
+          )}
         </span>
       </div>
 
+      {/* Generate more cards — always accessible */}
+      <div className="mb-4">
+        <GenerateCardsPanel
+          deck={deck}
+          existingCards={allCards}
+          onGenerated={handleGenerated}
+        />
+      </div>
+
       {/* Progress bar */}
-      <div className="w-full bg-slate-700 rounded-full h-2 mb-8">
+      <div className="w-full bg-slate-700 rounded-full h-2 mb-6">
         <div
           className="bg-blue-500 h-2 rounded-full transition-all duration-500"
           style={{ width: `${progressPct}%` }}

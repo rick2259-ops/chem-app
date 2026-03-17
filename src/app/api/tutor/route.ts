@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt } from '@/lib/claude/prompts';
+import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt } from '@/lib/claude/prompts';
 import { TutorContext, ChatMessage } from '@/types/tutor';
 
 const client = new Anthropic({
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       lectureMode,
       flashcardRealLifeMode,
       flashcardMiniLectureMode,
+      flashcardGenerateMode,
       cardFront,
       cardBack,
       cardCategory,
@@ -28,6 +29,13 @@ export async function POST(req: NextRequest) {
       question,
       correctAnswer,
       studentAnswer,
+      generateDeckTitle,
+      generateDeckDescription,
+      generateCount,
+      generateExistingFronts,
+      synthesisMode,
+      synthesisCourseId,
+      synthesisdifficulty,
     } = body as {
       messages?: ChatMessage[];
       context?: TutorContext;
@@ -35,6 +43,7 @@ export async function POST(req: NextRequest) {
       lectureMode?: boolean;
       flashcardRealLifeMode?: boolean;
       flashcardMiniLectureMode?: boolean;
+      flashcardGenerateMode?: boolean;
       cardFront?: string;
       cardBack?: string;
       cardCategory?: string;
@@ -46,7 +55,43 @@ export async function POST(req: NextRequest) {
       question?: string;
       correctAnswer?: string;
       studentAnswer?: string;
+      generateDeckTitle?: string;
+      generateDeckDescription?: string;
+      generateCount?: number;
+      generateExistingFronts?: string[];
+      synthesisMode?: boolean;
+      synthesisCourseId?: string;
+      synthesisdifficulty?: 'easy' | 'medium' | 'hard';
     };
+
+    // Synthesis problem generation
+    if (synthesisMode && synthesisCourseId && synthesisdifficulty) {
+      const prompt = buildSynthesisPrompt(synthesisCourseId, synthesisdifficulty);
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const text = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      return new Response(text, { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Flashcard AI generation
+    if (flashcardGenerateMode && generateDeckTitle && generateDeckDescription) {
+      const prompt = buildFlashcardGenerationPrompt(
+        generateDeckTitle,
+        generateDeckDescription,
+        generateCount ?? 5,
+        generateExistingFronts ?? []
+      );
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const text = response.content[0].type === 'text' ? response.content[0].text : '[]';
+      return new Response(text, { headers: { 'Content-Type': 'application/json' } });
+    }
 
     // Flashcard real-life example
     if (flashcardRealLifeMode && cardFront && cardBack) {

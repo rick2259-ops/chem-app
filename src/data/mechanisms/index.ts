@@ -5,6 +5,9 @@ import { e1Mechanism } from './e1';
 import { aldolMechanism } from './aldol';
 import { dielsAlderMechanism } from './diels-alder';
 import { easMechanism } from './electrophilic-aromatic';
+import { grignardMechanism } from './grignard';
+import { nucleophilicAdditionMechanism } from './nucleophilic-addition';
+import { esterHydrolysisMechanism } from './ester-hydrolysis';
 import { Mechanism } from '@/types/mechanism';
 
 export const allMechanisms: Mechanism[] = [
@@ -15,6 +18,9 @@ export const allMechanisms: Mechanism[] = [
   aldolMechanism,
   dielsAlderMechanism,
   easMechanism,
+  grignardMechanism,
+  nucleophilicAdditionMechanism,
+  esterHydrolysisMechanism,
 ];
 
 export const mechanismMap: Record<string, Mechanism> = Object.fromEntries(
@@ -41,4 +47,7 @@ export {
   aldolMechanism,
   dielsAlderMechanism,
   easMechanism,
+  grignardMechanism,
+  nucleophilicAdditionMechanism,
+  esterHydrolysisMechanism,
 };

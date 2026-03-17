@@ -194,6 +194,9 @@ export default function DashboardPage() {
               { href: '/quiz', icon: '✏️', label: 'Start Quiz', desc: 'Test your knowledge', color: 'hover:border-blue-500/50 hover:bg-blue-600/10' },
               { href: '/flashcards', icon: '🃏', label: 'Flashcards', desc: 'Spaced repetition', color: 'hover:border-green-500/50 hover:bg-green-600/10' },
               { href: '/mechanisms', icon: '⚗️', label: 'Mechanisms', desc: 'Step-by-step reactions', color: 'hover:border-purple-500/50 hover:bg-purple-600/10' },
+              { href: '/reactions', icon: '🧪', label: 'Reactions', desc: 'Reference sheet', color: 'hover:border-teal-500/50 hover:bg-teal-600/10' },
+              { href: '/exam', icon: '📝', label: 'Practice Exam', desc: 'Timed mock exams', color: 'hover:border-red-500/50 hover:bg-red-600/10' },
+              { href: '/synthesis', icon: '🔬', label: 'Synthesis', desc: 'AI-generated problems', color: 'hover:border-violet-500/50 hover:bg-violet-600/10' },
               { href: '/tutor', icon: '🤖', label: 'AI Tutor', desc: 'Ask anything', color: 'hover:border-orange-500/50 hover:bg-orange-600/10' },
             ].map(action => (
               <Link
