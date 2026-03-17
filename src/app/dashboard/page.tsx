@@ -199,7 +199,8 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { href: '/guide', icon: '🧭', label: 'Study Guide', desc: 'What to memorize & why', color: 'hover:border-cyan-500/50 hover:bg-cyan-600/10' },
+              { href: '/plan', icon: '📋', label: 'My Study Plan', desc: 'Personalized next steps', color: 'hover:border-cyan-500/50 hover:bg-cyan-600/10' },
+              { href: '/guide', icon: '🧭', label: 'Study Guide', desc: 'What to memorize & why', color: 'hover:border-indigo-500/50 hover:bg-indigo-600/10' },
               { href: '/quiz', icon: '✏️', label: 'Start Quiz', desc: 'Test your knowledge', color: 'hover:border-blue-500/50 hover:bg-blue-600/10' },
               { href: '/flashcards', icon: '🃏', label: 'Flashcards', desc: 'Spaced repetition', color: 'hover:border-green-500/50 hover:bg-green-600/10' },
               { href: '/mechanisms', icon: '⚗️', label: 'Mechanisms', desc: 'Step-by-step reactions', color: 'hover:border-purple-500/50 hover:bg-purple-600/10' },
