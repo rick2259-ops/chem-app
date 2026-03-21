@@ -229,6 +229,42 @@ Rules for the solution array: number of objects must match numSteps exactly.
 The synthesis must be completable using reagents and reactions appropriate for ${courseId} at ${difficulty} difficulty.`;
 }
 
+export function buildQuizGenerationPrompt(
+  topicTitle: string,
+  courseId: string,
+  description: string,
+  count: number,
+  existingPrompts: string[]
+): string {
+  const existing = existingPrompts.slice(0, 30).map((p, i) => `${i + 1}. ${p}`).join('\n');
+  return `Generate ${count} NEW practice quiz questions for a UCR ${courseId} student studying "${topicTitle}".
+
+TOPIC DESCRIPTION: ${description}
+
+ALREADY COVERED (do NOT duplicate these questions):
+${existing || 'None yet'}
+
+Return ONLY a valid JSON array with exactly ${count} objects. No markdown, no explanation, just the array.
+
+Each object must have exactly these fields:
+{
+  "type": "multiple-choice" or "short-answer",
+  "difficulty": 1, 2, or 3,
+  "prompt": "clear question text",
+  "options": ["A", "B", "C", "D"] (only for multiple-choice, omit for short-answer),
+  "correctIndex": 0 (0-based index, only for multiple-choice, omit for short-answer),
+  "correctAnswer": "concise answer" (only for short-answer, omit for multiple-choice),
+  "explanation": "2-3 sentence explanation of the correct answer"
+}
+
+Rules:
+- At least half must be multiple-choice; at most 2 short-answer per batch
+- Vary difficulty: include easy (1), medium (2), and hard (3) questions
+- Questions must be exam-relevant for UCR CHEM 008 level
+- For multiple-choice: plausible distractors that test common misconceptions
+- Explanations should teach, not just restate the answer`;
+}
+
 export function buildGradingPrompt(
   question: string,
   correctAnswer: string,

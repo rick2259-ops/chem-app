@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt } from '@/lib/claude/prompts';
+import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt, buildQuizGenerationPrompt } from '@/lib/claude/prompts';
 import { TutorContext, ChatMessage } from '@/types/tutor';
 
 const client = new Anthropic({
@@ -33,6 +33,11 @@ export async function POST(req: NextRequest) {
       generateDeckDescription,
       generateCount,
       generateExistingFronts,
+      quizGenerateMode,
+      quizTopicTitle,
+      quizCourseId,
+      quizDescription,
+      quizExistingPrompts,
       synthesisMode,
       synthesisCourseId,
       synthesisdifficulty,
@@ -59,10 +64,33 @@ export async function POST(req: NextRequest) {
       generateDeckDescription?: string;
       generateCount?: number;
       generateExistingFronts?: string[];
+      quizGenerateMode?: boolean;
+      quizTopicTitle?: string;
+      quizCourseId?: string;
+      quizDescription?: string;
+      quizExistingPrompts?: string[];
       synthesisMode?: boolean;
       synthesisCourseId?: string;
       synthesisdifficulty?: 'easy' | 'medium' | 'hard';
     };
+
+    // Quiz question generation
+    if (quizGenerateMode && quizTopicTitle && quizCourseId && quizDescription !== undefined) {
+      const prompt = buildQuizGenerationPrompt(
+        quizTopicTitle,
+        quizCourseId,
+        quizDescription,
+        generateCount ?? 5,
+        quizExistingPrompts ?? []
+      );
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      const text = response.content[0].type === 'text' ? response.content[0].text : '[]';
+      return new Response(text, { headers: { 'Content-Type': 'application/json' } });
+    }
 
     // Synthesis problem generation
     if (synthesisMode && synthesisCourseId && synthesisdifficulty) {

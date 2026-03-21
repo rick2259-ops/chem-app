@@ -1,11 +1,14 @@
 'use client';
-import { use, useState, useRef, useEffect } from 'react';
+import { use, useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getQuizQuestions } from '@/data/quizzes';
 import { getTopic } from '@/data/courses';
 import { useQuizSession } from '@/hooks/useQuizSession';
+import { useCustomQuestions } from '@/hooks/useCustomQuestions';
+import { Question } from '@/types/quiz';
+import { CourseId } from '@/types/course';
 
 function ScoreCircle({ score }: { score: number }) {
   const color = score >= 80 ? '#16a34a' : score >= 60 ? '#ca8a04' : '#dc2626';
@@ -128,7 +131,64 @@ function QuizAIPanel({ mode, questionPrompt, correctAnswer, resetKey, label, ico
 export default function QuizTopicPage({ params }: { params: Promise<{ topicId: string }> }) {
   const { topicId } = use(params);
   const topic = getTopic(topicId);
-  const questions = getQuizQuestions(topicId);
+  const baseQuestions = getQuizQuestions(topicId);
+  const { customQuestions, addQuestions, clearQuestions } = useCustomQuestions(topicId);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState('');
+
+  const questions = useMemo(
+    () => [...baseQuestions, ...customQuestions],
+    [baseQuestions, customQuestions]
+  );
+
+  async function handleGenerate() {
+    if (!topic) return;
+    setIsGenerating(true);
+    setGenerateError('');
+    try {
+      const existingPrompts = questions.map(q => q.prompt);
+      const res = await fetch('/api/tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quizGenerateMode: true,
+          quizTopicTitle: topic.title,
+          quizCourseId: topic.courseId,
+          quizDescription: topic.description,
+          generateCount: 5,
+          quizExistingPrompts: existingPrompts,
+        }),
+      });
+      if (!res.ok) throw new Error('API error');
+      const raw: Array<{
+        type: string;
+        difficulty: number;
+        prompt: string;
+        options?: string[];
+        correctIndex?: number;
+        correctAnswer?: string;
+        explanation: string;
+      }> = await res.json();
+      const newQuestions: Question[] = raw.map((q, i) => ({
+        id: `custom-${topicId}-${Date.now()}-${i}`,
+        topicId,
+        courseId: topic.courseId as CourseId,
+        type: q.type === 'short-answer' ? 'short-answer' : 'multiple-choice',
+        difficulty: ([1, 2, 3].includes(q.difficulty) ? q.difficulty : 2) as 1 | 2 | 3,
+        prompt: q.prompt,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        tags: [],
+      }));
+      addQuestions(newQuestions);
+    } catch {
+      setGenerateError('Could not generate questions. Check your connection and try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  }
 
   const {
     state, currentQuestion, currentIndex, totalQuestions,
@@ -198,6 +258,43 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
           >
             Start Quiz
           </button>
+
+          {/* Generate more questions */}
+          <div className="mt-4 border-t border-slate-700 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-500">
+                {customQuestions.length > 0
+                  ? `+${customQuestions.length} AI-generated question${customQuestions.length !== 1 ? 's' : ''} added`
+                  : 'Want more practice?'}
+              </span>
+              {customQuestions.length > 0 && (
+                <button
+                  onClick={clearQuestions}
+                  className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Generating 5 more questions...
+                </>
+              ) : (
+                <>+ Generate 5 More Practice Questions</>
+              )}
+            </button>
+            {generateError && (
+              <p className="text-red-400 text-xs mt-2 text-center">{generateError}</p>
+            )}
+          </div>
+
           <Link href="/quiz" className="block mt-3 text-slate-400 hover:text-slate-300 text-sm transition-colors">
             ← Back to Quizzes
           </Link>
