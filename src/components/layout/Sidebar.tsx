@@ -10,6 +10,7 @@ const navItems = [
   { href: '/flashcards', label: 'Flashcards', icon: '🃏' },
   { href: '/mechanisms', label: 'Mechanisms', icon: '⚗️' },
   { href: '/drill/mechanisms', label: 'Mechanism Drill', icon: '🔬' },
+  { href: '/drill/arrows', label: 'Arrow Pushing', icon: '➡️' },
   { href: '/reactions', label: 'Reactions', icon: '🧪' },
   { href: '/quiz', label: 'Quizzes', icon: '✏️' },
   { href: '/drill', label: 'Drill Mode', icon: '🎯' },

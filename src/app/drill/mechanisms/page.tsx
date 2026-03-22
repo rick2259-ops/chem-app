@@ -34,6 +34,7 @@ interface StepAttempt {
 
 // Problem-solving types
 interface StepAnswers {
+  arrowFlow?: { from: string; to: string };
   substrate:  string;
   reagent:    string;
   conditions: string;
@@ -154,6 +155,26 @@ const STEP_DEFS = [
 
 type StepKey = typeof STEP_DEFS[number]['key'];
 
+// Arrow flow option sets (mirrors arrow-questions.ts vocabulary)
+const ARROW_FROM_OPTS = [
+  { value: 'lone-pair',    label: 'Lone pair (nucleophile N, O, X⁻)' },
+  { value: 'pi-alkene',   label: 'π bond — alkene / aromatic' },
+  { value: 'pi-carbonyl', label: 'π bond — carbonyl (C=O)' },
+  { value: 'c-h-alpha',   label: 'C–H bond (alpha carbon)' },
+  { value: 'c-lg-bond',   label: 'C–Leaving group bond (C–X, C–OTs)' },
+  { value: 'carbanion',   label: 'Carbanion / C–Metal (hydride, Grignard)' },
+];
+const ARROW_TO_OPTS = [
+  { value: 'sp3-carbon',      label: 'Electrophilic sp³ carbon (C–LG or carbocation)' },
+  { value: 'carbonyl-carbon', label: 'Carbonyl carbon (electrophilic C=O)' },
+  { value: 'leaving-group',   label: 'Leaving group (departs with electrons)' },
+  { value: 'proton',          label: 'Proton / acidic H (abstracted by base)' },
+  { value: 'electrophile',    label: 'External electrophile (Br₂, NO₂⁺, Lewis acid)' },
+  { value: 'base',            label: 'Base (accepts proton)' },
+];
+
+type ArrowPhase = 'from' | 'to';
+
 function StepChallenge({
   stepAnswers,
   questionIndex,
@@ -163,6 +184,13 @@ function StepChallenge({
   questionIndex: number;
   onComplete: () => void;
 }) {
+  // Step 0 = arrowFlow (from → to). Steps 1–4 = STEP_DEFS.
+  // currentStep: -1 = arrowFrom, 0 = arrowTo, 1..4 = STEP_DEFS[0..3]
+  const [phase, setPhase]             = useState<'arrow-from' | 'arrow-to' | 'steps'>('arrow-from');
+  const [arrowFromSel, setArrowFromSel] = useState<string | null>(null);
+  const [arrowToSel, setArrowToSel]   = useState<string | null>(null);
+  const [arrowFromRevealed, setArrowFromRevealed] = useState(false);
+  const [arrowToRevealed, setArrowToRevealed]     = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections]   = useState<Record<StepKey, string | null>>({
     substrate: null, reagent: null, conditions: null, mechanism: null,
@@ -176,6 +204,9 @@ function StepChallenge({
   useEffect(() => {
     if (questionIndex !== prevIndex.current) {
       prevIndex.current = questionIndex;
+      setPhase('arrow-from');
+      setArrowFromSel(null); setArrowToSel(null);
+      setArrowFromRevealed(false); setArrowToRevealed(false);
       setCurrentStep(0);
       setSelections({ substrate: null, reagent: null, conditions: null, mechanism: null });
       setRevealed({ substrate: false, reagent: false, conditions: false, mechanism: false });
@@ -191,18 +222,44 @@ function StepChallenge({
     }
   }, [stepAnswers, onComplete]);
 
+  // If stepAnswers has no arrowFlow, skip straight to steps phase
+  useEffect(() => {
+    if (stepAnswers && !stepAnswers.arrowFlow && phase === 'arrow-from') {
+      setPhase('steps');
+    }
+  }, [stepAnswers, phase]);
+
   if (!stepAnswers) return null;
 
+  const hasArrowFlow = !!stepAnswers.arrowFlow;
+  const totalSteps   = (hasArrowFlow ? 2 : 0) + STEP_DEFS.length; // 2 = from+to
+
+  // ── Arrow flow handlers ──
+  const handleArrowFrom = (value: string) => {
+    if (arrowFromRevealed) return;
+    const correct = value === stepAnswers.arrowFlow?.from;
+    setArrowFromSel(value);
+    setArrowFromRevealed(true);
+    setTimeout(() => setPhase('arrow-to'), correct ? 1200 : 2000);
+  };
+
+  const handleArrowTo = (value: string) => {
+    if (arrowToRevealed) return;
+    const correct = value === stepAnswers.arrowFlow?.to;
+    setArrowToSel(value);
+    setArrowToRevealed(true);
+    setTimeout(() => setPhase('steps'), correct ? 1200 : 2000);
+  };
+
+  // ── STEP_DEFS handlers ──
   const stepDef    = STEP_DEFS[currentStep];
-  const correctVal = stepAnswers[stepDef?.key];
+  const correctVal = stepAnswers[stepDef?.key as keyof StepAnswers] as string | undefined;
 
   const handleSelect = (value: string) => {
     const key    = stepDef.key;
     const correct = value === correctVal;
-
     setSelections(prev => ({ ...prev, [key]: value }));
     setRevealed(prev => ({ ...prev, [key]: true }));
-
     const advanceDelay = correct ? 1200 : 2000;
     setTimeout(() => {
       const nextStep = currentStep + 1;
@@ -217,11 +274,21 @@ function StepChallenge({
     }, advanceDelay);
   };
 
-  const isRevealed  = revealed[stepDef.key];
-  const mySelection = selections[stepDef.key];
+  const isRevealed  = revealed[stepDef?.key];
+  const mySelection = selections[stepDef?.key];
 
-  // Summary bar of completed steps
-  const completedSteps = STEP_DEFS.slice(0, currentStep);
+  // How many steps shown in header counter
+  const arrowFromDone = arrowFromRevealed;
+  const arrowToDone   = arrowToRevealed;
+  const completedCount =
+    (hasArrowFlow ? (arrowFromDone ? 1 : 0) + (arrowToDone ? 1 : 0) : 0) +
+    STEP_DEFS.slice(0, currentStep).length +
+    (phase === 'steps' && revealed[stepDef?.key] ? 1 : 0);
+
+  const currentStepNum =
+    phase === 'arrow-from' ? 1 :
+    phase === 'arrow-to'   ? 2 :
+    (hasArrowFlow ? 2 : 0) + currentStep + 1;
 
   return (
     <div className="mb-4 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900/60">
@@ -231,67 +298,182 @@ function StepChallenge({
           Step Analysis
         </span>
         <span className="text-xs text-slate-500">
-          {currentStep + 1} of {STEP_DEFS.length} — unlock the answer choices
+          Step {currentStepNum} of {totalSteps} — unlock the answer choices
         </span>
       </div>
 
-      {/* Completed steps summary */}
-      {completedSteps.length > 0 && (
+      {/* Completed arrow-flow pills */}
+      {hasArrowFlow && (arrowFromDone || arrowToDone) && (
         <div className="flex flex-wrap gap-2 px-4 pt-3">
-          {completedSteps.map(s => {
+          {arrowFromDone && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              arrowFromSel === stepAnswers.arrowFlow?.from
+                ? 'bg-green-500/15 text-green-400'
+                : 'bg-red-500/15 text-red-400'
+            }`}>
+              ➡️ FROM: {ARROW_FROM_OPTS.find(o => o.value === stepAnswers.arrowFlow?.from)?.label ?? stepAnswers.arrowFlow?.from}
+            </span>
+          )}
+          {arrowToDone && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+              arrowToSel === stepAnswers.arrowFlow?.to
+                ? 'bg-green-500/15 text-green-400'
+                : 'bg-red-500/15 text-red-400'
+            }`}>
+              ➡️ TO: {ARROW_TO_OPTS.find(o => o.value === stepAnswers.arrowFlow?.to)?.label ?? stepAnswers.arrowFlow?.to}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Completed STEP_DEFS summary pills */}
+      {phase === 'steps' && currentStep > 0 && (
+        <div className="flex flex-wrap gap-2 px-4 pt-3">
+          {STEP_DEFS.slice(0, currentStep).map(s => {
             const sel     = selections[s.key];
-            const correct = sel === stepAnswers[s.key];
-            const label   = s.options.find(o => o.value === stepAnswers[s.key])?.label ?? stepAnswers[s.key];
+            const correct = sel === stepAnswers[s.key as keyof StepAnswers];
+            const label   = s.options.find((o: { value: string; label: string }) => o.value === stepAnswers[s.key as keyof StepAnswers])?.label ?? stepAnswers[s.key as keyof StepAnswers];
             return (
               <span key={s.key} className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                 correct ? 'bg-green-500/15 text-green-400' : 'bg-red-500/15 text-red-400'
               }`}>
-                {s.icon} {label}
+                {s.icon} {label as string}
               </span>
             );
           })}
         </div>
       )}
 
-      {/* Active step */}
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-base">{stepDef.icon}</span>
-          <span className="text-sm font-semibold text-white">{stepDef.label}</span>
-          <span className="text-xs text-slate-500">— {stepDef.question}</span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {stepDef.options.map(opt => {
-            let cls = 'border-slate-600 text-slate-300 hover:border-violet-500 hover:text-white cursor-pointer';
-            if (isRevealed) {
-              if (opt.value === correctVal)       cls = 'border-green-500 bg-green-500/15 text-green-300';
-              else if (opt.value === mySelection) cls = 'border-red-500 bg-red-500/15 text-red-300';
-              else                               cls = 'border-slate-700 text-slate-600 opacity-40';
-            }
-            return (
-              <button
-                key={opt.value}
-                onClick={() => !isRevealed && handleSelect(opt.value)}
-                disabled={isRevealed}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${cls}`}
-              >
-                {opt.value === correctVal && isRevealed && '✓ '}
-                {opt.value === mySelection && opt.value !== correctVal && isRevealed && '✗ '}
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {isRevealed && (
-          <p className={`mt-2 text-xs font-medium ${mySelection === correctVal ? 'text-green-400' : 'text-red-400'}`}>
-            {mySelection === correctVal
-              ? 'Correct! Moving to next step...'
-              : `Not quite — the answer is highlighted above. Moving on...`}
+      {/* ── Arrow Flow: Step 0a — FROM ── */}
+      {phase === 'arrow-from' && hasArrowFlow && (
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base">⚡</span>
+            <span className="text-sm font-semibold text-white">Trace the Arrow — Step 0</span>
+          </div>
+          <p className="text-xs text-slate-400 mb-3">
+            Electrons always flow from electron-rich → electron-poor.<br />
+            <strong className="text-amber-400">Where do the electrons come FROM?</strong>
           </p>
-        )}
-      </div>
+          <div className="flex flex-col gap-2">
+            {ARROW_FROM_OPTS.map(opt => {
+              const correct = opt.value === stepAnswers.arrowFlow?.from;
+              let cls = 'border-slate-600 text-slate-300 hover:border-violet-500 hover:text-white cursor-pointer';
+              if (arrowFromRevealed) {
+                if (correct)                          cls = 'border-green-500 bg-green-500/15 text-green-300';
+                else if (opt.value === arrowFromSel)  cls = 'border-red-500 bg-red-500/15 text-red-300';
+                else                                  cls = 'border-slate-700 text-slate-600 opacity-40';
+              }
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleArrowFrom(opt.value)}
+                  disabled={arrowFromRevealed}
+                  className={`w-full text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all ${cls}`}
+                >
+                  {correct && arrowFromRevealed && '✓ '}
+                  {opt.value === arrowFromSel && !correct && arrowFromRevealed && '✗ '}
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {arrowFromRevealed && (
+            <p className={`mt-2 text-xs font-medium ${arrowFromSel === stepAnswers.arrowFlow?.from ? 'text-green-400' : 'text-red-400'}`}>
+              {arrowFromSel === stepAnswers.arrowFlow?.from
+                ? 'Correct! Now identify where they go...'
+                : 'Not quite — correct answer highlighted. Moving to TO...'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Arrow Flow: Step 0b — TO ── */}
+      {phase === 'arrow-to' && hasArrowFlow && (
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-base">⚡</span>
+            <span className="text-sm font-semibold text-white">Trace the Arrow — Step 0</span>
+          </div>
+          <p className="text-xs text-slate-400 mb-3">
+            You identified the electron source. Now:<br />
+            <strong className="text-amber-400">Where do the electrons go TO?</strong>
+          </p>
+          <div className="flex flex-col gap-2">
+            {ARROW_TO_OPTS.map(opt => {
+              const correct = opt.value === stepAnswers.arrowFlow?.to;
+              let cls = 'border-slate-600 text-slate-300 hover:border-violet-500 hover:text-white cursor-pointer';
+              if (arrowToRevealed) {
+                if (correct)                         cls = 'border-green-500 bg-green-500/15 text-green-300';
+                else if (opt.value === arrowToSel)   cls = 'border-red-500 bg-red-500/15 text-red-300';
+                else                                 cls = 'border-slate-700 text-slate-600 opacity-40';
+              }
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleArrowTo(opt.value)}
+                  disabled={arrowToRevealed}
+                  className={`w-full text-left px-3 py-2 rounded-lg border text-xs font-medium transition-all ${cls}`}
+                >
+                  {correct && arrowToRevealed && '✓ '}
+                  {opt.value === arrowToSel && !correct && arrowToRevealed && '✗ '}
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+          {arrowToRevealed && (
+            <p className={`mt-2 text-xs font-medium ${arrowToSel === stepAnswers.arrowFlow?.to ? 'text-green-400' : 'text-red-400'}`}>
+              {arrowToSel === stepAnswers.arrowFlow?.to
+                ? 'Correct! Arrow traced. Analyzing the mechanism...'
+                : 'Not quite — correct answer highlighted. Continuing...'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── STEP_DEFS 1–4 ── */}
+      {phase === 'steps' && (
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-base">{stepDef.icon}</span>
+            <span className="text-sm font-semibold text-white">{stepDef.label}</span>
+            <span className="text-xs text-slate-500">— {stepDef.question}</span>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {stepDef.options.map((opt: { value: string; label: string }) => {
+              let cls = 'border-slate-600 text-slate-300 hover:border-violet-500 hover:text-white cursor-pointer';
+              if (isRevealed) {
+                if (opt.value === correctVal)       cls = 'border-green-500 bg-green-500/15 text-green-300';
+                else if (opt.value === mySelection) cls = 'border-red-500 bg-red-500/15 text-red-300';
+                else                               cls = 'border-slate-700 text-slate-600 opacity-40';
+              }
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => !isRevealed && handleSelect(opt.value)}
+                  disabled={isRevealed}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${cls}`}
+                >
+                  {opt.value === correctVal && isRevealed && '✓ '}
+                  {opt.value === mySelection && opt.value !== correctVal && isRevealed && '✗ '}
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {isRevealed && (
+            <p className={`mt-2 text-xs font-medium ${mySelection === correctVal ? 'text-green-400' : 'text-red-400'}`}>
+              {mySelection === correctVal
+                ? 'Correct! Moving to next step...'
+                : 'Not quite — the answer is highlighted above. Moving on...'}
+            </p>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

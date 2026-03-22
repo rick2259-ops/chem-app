@@ -249,6 +249,10 @@ Each object must have exactly these fields:
   "correctIndex": 0,
   "explanation": "3-4 sentences explaining why the answer is correct and why the others are wrong",
   "stepAnswers": {
+    "arrowFlow": {
+      "from": "one of: lone-pair | pi-alkene | pi-carbonyl | c-h-alpha | c-lg-bond | carbanion",
+      "to": "one of: sp3-carbon | carbonyl-carbon | leaving-group | proton | electrophile | base"
+    },
     "substrate": "one of: primary | secondary | tertiary | alkene-alkyne | carbonyl | aromatic",
     "reagent": "one of: nucleophile | base | electrophile | oxidant | reductant | acid-catalyst",
     "conditions": "one of: polar-protic | polar-aprotic | nonpolar | acid-catalyst | heat | no-solvent",
@@ -257,6 +261,8 @@ Each object must have exactly these fields:
 }
 
 The stepAnswers field is critical — it identifies the key analysis step for each question:
+- arrowFlow.from: the electron-rich source of the KEY curved arrow (lone-pair, pi-alkene, pi-carbonyl, c-h-alpha, c-lg-bond, or carbanion)
+- arrowFlow.to: the electron-poor destination of the KEY curved arrow (sp3-carbon, carbonyl-carbon, leaving-group, proton, electrophile, or base)
 - substrate: the type of carbon/functional group that is reacting
 - reagent: the primary role of the reagent in the mechanism
 - conditions: the most mechanistically important condition (solvent type, catalyst, or temperature)
@@ -275,7 +281,8 @@ Rules:
 - Wrong options must reflect genuine student misconceptions — not obviously wrong
 - Cover a variety of mechanisms from the list above
 - Vary difficulty from straightforward to multi-factor reasoning
-- stepAnswers values must be exactly one of the listed options — no other values allowed`;
+- stepAnswers values must be exactly one of the listed options — no other values allowed
+- arrowFlow must always be included — every mechanism problem has a key curved arrow`;
 }
 
 export function buildQuizGenerationPrompt(
