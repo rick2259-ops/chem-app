@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import StructuralFormula from '@/components/drill/StructuralFormula';
 import { allMechanisms } from '@/data/mechanisms';
 import MechanismCanvas from '@/components/mechanisms/MechanismCanvas';
 import { Mechanism, MechanismStep } from '@/types/mechanism';
@@ -47,6 +48,8 @@ interface PracticeQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
+  structural?: string;
+  smilesLabel?: string;
   stepAnswers?: StepAnswers;
 }
 interface PracticeAttempt {
@@ -1441,6 +1444,16 @@ export default function MechanismDrillPage() {
             {currentQ.mechanismFocus}
           </span>
         </div>
+
+        {currentQ.structural && (
+          <div className="mb-4">
+            <StructuralFormula
+              structural={currentQ.structural}
+              label={currentQ.smilesLabel}
+            />
+          </div>
+        )}
+
         <p className="text-white text-base leading-relaxed mb-6">{currentQ.prompt}</p>
 
         {state === 'drilling' && (

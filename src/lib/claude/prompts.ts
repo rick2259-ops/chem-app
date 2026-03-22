@@ -248,6 +248,8 @@ Each object must have exactly these fields:
   "options": ["option A", "option B", "option C", "option D"],
   "correctIndex": 0,
   "explanation": "3-4 sentences explaining why the answer is correct and why the others are wrong",
+  "structural": "ASCII structural drawing of the key substrate, using — for bonds, ‖ for double bonds, | for vertical bonds (e.g. 'CH₃\\n |\\nCH₃ — C — Br\\n |\\nCH₃')",
+  "smilesLabel": "short molecule name shown under the structure (e.g. '2-bromobutane')",
   "stepAnswers": {
     "arrowFlow": {
       "from": "one of: lone-pair | pi-alkene | pi-carbonyl | c-h-alpha | c-lg-bond | carbanion",
@@ -282,7 +284,8 @@ Rules:
 - Cover a variety of mechanisms from the list above
 - Vary difficulty from straightforward to multi-factor reasoning
 - stepAnswers values must be exactly one of the listed options — no other values allowed
-- arrowFlow must always be included — every mechanism problem has a key curved arrow`;
+- arrowFlow must always be included — every mechanism problem has a key curved arrow
+- structural must be a clear ASCII line drawing using — (single bond), ‖ (double bond), | (vertical bond); keep it compact and centered`;
 }
 
 export function buildQuizGenerationPrompt(

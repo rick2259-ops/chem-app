@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import StructuralFormula from '@/components/drill/StructuralFormula';
 import {
   arrowQuestions,
   FROM_OPTIONS,
@@ -321,6 +322,15 @@ export default function ArrowPushingDrillPage() {
             {currentQ.difficulty === 1 ? 'Basic' : currentQ.difficulty === 2 ? 'Intermediate' : 'Advanced'}
           </span>
         </div>
+
+        {/* Structural drawing */}
+        <div className="mb-4">
+          <StructuralFormula
+            structural={currentQ.structural}
+            label={currentQ.smilesLabel}
+          />
+        </div>
+
         <p className="text-white font-medium mb-1">{currentQ.scenario}</p>
         <p className="text-slate-400 text-sm leading-relaxed">{currentQ.context}</p>
       </div>

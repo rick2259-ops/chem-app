@@ -32,6 +32,9 @@ export interface ArrowQuestion {
   scenario: string;       // one sentence: what species are reacting
   context: string;        // 2-3 sentences: more detail on what's happening
   arrowLabel: string;     // "the FIRST curved arrow" or "the key curved arrow"
+  smiles: string;         // SMILES (kept for future rendering)
+  smilesLabel?: string;   // short label under the structure
+  structural: string;     // ASCII structural drawing shown in the UI
   correctFrom: FromValue;
   correctTo: ToValue;
   bondFormed: string;
@@ -53,6 +56,13 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'CN⁻ is a strong nucleophile with a lone pair on carbon. It approaches CH₃Br from the back — opposite the bromide leaving group. This is an SN2 reaction.',
     arrowLabel: 'the key curved arrow (the attack step)',
+    smiles: 'CBr',
+    smilesLabel: 'CH₃Br (methyl bromide)',
+    structural: `    H
+    |
+H — C — Br
+    |
+    H`,
     correctFrom: 'lone-pair',
     correctTo: 'sp3-carbon',
     bondFormed: 'C–CN bond',
@@ -70,6 +80,11 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'OH⁻ is the nucleophile. The carbon bearing bromine is a secondary sp³ carbon — electrophilic because bromine withdraws electron density. SN2 proceeds with inversion of configuration.',
     arrowLabel: 'the first curved arrow',
+    smiles: 'CC(Br)CC',
+    smilesLabel: '(R)-2-bromobutane',
+    structural: `         Br
+         |
+CH₃ — CH — CH₂ — CH₃`,
     correctFrom: 'lone-pair',
     correctTo: 'sp3-carbon',
     bondFormed: 'O–C bond',
@@ -89,6 +104,13 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'The first step of SN1 is ionization: the C–Br bond breaks heterolytically. Both electrons go with the more electronegative bromine. Water stabilizes both ions via hydrogen bonding.',
     arrowLabel: 'the ionization arrow (Step 1)',
+    smiles: 'CC(C)(C)Br',
+    smilesLabel: 'tert-butyl bromide',
+    structural: `        CH₃
+         |
+CH₃ — C — Br
+         |
+        CH₃`,
     correctFrom: 'c-lg-bond',
     correctTo: 'leaving-group',
     bondFormed: 'none (bond only breaks)',
@@ -106,6 +128,13 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'After ionization, a planar carbocation forms. Water acts as a nucleophile, donating a lone pair to the empty p orbital. This is Step 2 of SN1.',
     arrowLabel: 'the nucleophilic attack arrow (Step 2)',
+    smiles: 'C[C+](C)C',
+    smilesLabel: 'tert-butyl carbocation',
+    structural: `        CH₃
+         |
+CH₃ — C(+)
+         |
+        CH₃`,
     correctFrom: 'lone-pair',
     correctTo: 'sp3-carbon',
     bondFormed: 'O–C bond',
@@ -125,6 +154,12 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'E2 is concerted: three things happen simultaneously. In the key arrow flow, the base abstracts the anti-periplanar beta hydrogen. The electrons cascade through: base ← H, C–H → C=C, C–Br → Br⁻.',
     arrowLabel: 'the FIRST curved arrow (base abstracts the beta-H)',
+    smiles: 'CCC(Br)C',
+    smilesLabel: '2-bromobutane',
+    structural: `    H       Br
+    |        |
+CH₃ — CH — CH — CH₃
+  (beta-H anti to Br)`,
     correctFrom: 'lone-pair',
     correctTo: 'proton',
     bondFormed: 'O–H bond (on the base)',
@@ -142,6 +177,13 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'Once the base pulls the proton, the electrons from the C–H bond don\'t stay on carbon — they shift to form the new π bond between the alpha and beta carbons.',
     arrowLabel: 'the SECOND curved arrow (C–H electrons form the π bond)',
+    smiles: 'CCC(Br)C',
+    smilesLabel: '2-bromobutane (E2 cascade)',
+    structural: `         Br
+          |
+CH₃ — CH — CH — CH₃
+               |
+              H  (C–H bond → alkene)`,
     correctFrom: 'c-h-alpha',
     correctTo: 'sp3-carbon',
     bondFormed: 'C=C π bond (alkene)',
@@ -161,6 +203,13 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'The carboxylate is the base here — it accepts a proton from the hydronium ion. This is a simple proton transfer, the most common elementary step in organic chemistry.',
     arrowLabel: 'the proton transfer arrow',
+    smiles: 'CC(=O)[O-]',
+    smilesLabel: 'acetate (CH₃COO⁻)',
+    structural: `       O
+       ‖
+CH₃ — C
+        \\
+         O(-)`,
     correctFrom: 'lone-pair',
     correctTo: 'proton',
     bondFormed: 'O–H bond (on carboxylate oxygen)',
@@ -178,6 +227,12 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'LDA is a strong, hindered base that deprotonates C–H bonds alpha to carbonyls. The alpha-H is slightly acidic because the resulting carbanion is stabilized by the adjacent C=O.',
     arrowLabel: 'the deprotonation arrow',
+    smiles: 'CC(C)=O',
+    smilesLabel: 'acetone',
+    structural: `       O
+       ‖
+CH₃ — C — CH₃
+       (alpha-H)`,
     correctFrom: 'c-h-alpha',
     correctTo: 'base',
     bondFormed: 'N–H bond (on LDA nitrogen)',
@@ -197,6 +252,11 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'Hydride (H⁻) from NaBH₄ is the nucleophile — a carbanion equivalent. The carbonyl carbon is electrophilic because oxygen pulls electron density away via the C=O π bond.',
     arrowLabel: 'the hydride attack arrow',
+    smiles: 'CC=O',
+    smilesLabel: 'acetaldehyde (CH₃CHO)',
+    structural: `     O
+     ‖
+CH₃ — C — H`,
     correctFrom: 'carbanion',
     correctTo: 'carbonyl-carbon',
     bondFormed: 'C–H bond (at former carbonyl carbon)',
@@ -214,6 +274,12 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'Grignard reagents are carbanions — the C–Mg bond is so polarized that carbon bears significant negative charge. The carbonyl carbon of benzaldehyde is electrophilic.',
     arrowLabel: 'the Grignard attack arrow',
+    smiles: 'O=Cc1ccccc1',
+    smilesLabel: 'benzaldehyde',
+    structural: `      O
+      ‖
+ Ph — C — H
+(Ph = C₆H₅)`,
     correctFrom: 'carbanion',
     correctTo: 'carbonyl-carbon',
     bondFormed: 'C–C bond (new carbon-carbon bond)',
@@ -231,6 +297,12 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'After protonation of the carbonyl oxygen (by H⁺ catalyst), the carbonyl carbon becomes even more electrophilic. Methanol acts as a nucleophile.',
     arrowLabel: 'the nucleophilic attack arrow (oxygen attacks carbonyl)',
+    smiles: 'CC=[OH+]',
+    smilesLabel: 'protonated acetaldehyde (acid-cat.)',
+    structural: `    (+)OH
+       |
+CH₃ — C — H
+  (electrophilic at C)`,
     correctFrom: 'lone-pair',
     correctTo: 'carbonyl-carbon',
     bondFormed: 'O–C bond',
@@ -250,6 +322,9 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'The alkene π bond is electron-rich. The H of HBr is electrophilic (δ⁺). The π electrons attack the proton — this is electrophilic addition, Step 1.',
     arrowLabel: 'the first arrow (π bond attacks the proton)',
+    smiles: 'CC=C',
+    smilesLabel: 'propene',
+    structural: `CH₃ — CH = CH₂`,
     correctFrom: 'pi-alkene',
     correctTo: 'proton',
     bondFormed: 'C–H bond (at the less-substituted carbon)',
@@ -267,6 +342,11 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'After protonation, a carbocation forms at the more substituted carbon. Br⁻ (released in Step 1) is a good nucleophile with lone pairs. Step 2 is just an SN1-like nucleophilic capture.',
     arrowLabel: 'the second arrow (Br⁻ attacks the carbocation)',
+    smiles: 'C[C+]C',
+    smilesLabel: '2° carbocation (isopropyl)',
+    structural: `       (+)
+CH₃ — CH — CH₃
+  (secondary carbocation)`,
     correctFrom: 'lone-pair',
     correctTo: 'sp3-carbon',
     bondFormed: 'C–Br bond',
@@ -286,6 +366,16 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'AlBr₃ activates Br₂ by pulling electron density toward Al, making one Br highly electrophilic. The benzene π system (6 electrons, electron-rich) attacks this electrophilic Br.',
     arrowLabel: 'the first arrow (benzene π system attacks Br)',
+    smiles: 'c1ccccc1',
+    smilesLabel: 'benzene',
+    structural: `  H   H   H
+   \\ |  /
+H — C=C — C — H
+    |       |
+H — C — C=C — H
+   /  |  \\
+  H   H   H
+  (aromatic ring)`,
     correctFrom: 'pi-alkene',
     correctTo: 'electrophile',
     bondFormed: 'C–Br bond (one carbon of benzene)',
@@ -303,6 +393,13 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'After Br attacks benzene, one carbon becomes sp³ and has both H and Br. AlBr₄⁻ acts as a base and abstracts the proton, restoring aromaticity. This is the second step of all EAS reactions.',
     arrowLabel: 'the rearomatization arrow (C–H electrons restore the ring)',
+    smiles: 'BrC1C=CC=CC1',
+    smilesLabel: 'arenium ion (sigma complex)',
+    structural: `     Br  H
+      \\ /
+  H — C(sp³) — ring(+)
+      |
+  (arenium / Wheland intermediate)`,
     correctFrom: 'c-h-alpha',
     correctTo: 'base',
     bondFormed: 'H–AlBr₄⁻ (H is transferred to base)',
@@ -322,6 +419,11 @@ export const arrowQuestions: ArrowQuestion[] = [
     context:
       'Acyl chloride is highly electrophilic at the carbonyl carbon — both Cl and O withdraw electrons. Ethanol acts as the nucleophile. This is addition-elimination (tetrahedral intermediate).',
     arrowLabel: 'the first arrow (ethanol oxygen attacks carbonyl carbon)',
+    smiles: 'CC(=O)Cl',
+    smilesLabel: 'acetyl chloride',
+    structural: `     O
+     ‖
+CH₃ — C — Cl`,
     correctFrom: 'lone-pair',
     correctTo: 'carbonyl-carbon',
     bondFormed: 'O–C bond (to carbonyl carbon)',
