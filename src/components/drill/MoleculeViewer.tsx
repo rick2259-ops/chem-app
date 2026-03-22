@@ -1,65 +1,61 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Props {
   smiles: string;
   label?: string;
-  width?: number;
-  height?: number;
+  /** ASCII structural drawing shown if PubChem can't resolve the molecule */
+  fallback?: string;
+  size?: number;
 }
 
-export default function MoleculeViewer({ smiles, label, width = 300, height = 220 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [failed, setFailed] = useState(false);
+/**
+ * Fetches a 2D structural diagram from PubChem REST API (proper CH₃/Br label style).
+ * Falls back to the ASCII `fallback` string for reactive species (carbocations, etc.)
+ * that PubChem doesn't carry.
+ */
+export default function MoleculeViewer({ smiles, label, fallback, size = 300 }: Props) {
+  const [status, setStatus] = useState<'loading' | 'ok' | 'failed'>('loading');
+
+  const src = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/PNG?image_size=${size}x${size}`;
 
   useEffect(() => {
-    if (!canvasRef.current || !smiles) return;
-    let cancelled = false;
-    setFailed(false);
+    if (!smiles) { setStatus('failed'); return; }
+    setStatus('loading');
+    const img = new Image();
+    img.onload  = () => setStatus('ok');
+    img.onerror = () => setStatus('failed');
+    img.src = src;
+    return () => { img.onload = null; img.onerror = null; };
+  }, [src, smiles]);
 
-    import('smiles-drawer').then((mod) => {
-      if (cancelled || !canvasRef.current) return;
-      const SD = (mod.default ?? mod) as any;
-
-      const drawer = new SD.Drawer({
-        width,
-        height,
-        bondThickness: 1.5,
-        fontSizeLarge: 15,
-        fontSizeSmall: 9,
-        padding: 24,
-        compactDrawing: false,
-      });
-
-      SD.parse(
-        smiles,
-        (tree: any) => {
-          if (!cancelled && canvasRef.current) {
-            try {
-              drawer.draw(tree, canvasRef.current, 'light', false);
-            } catch {
-              if (!cancelled) setFailed(true);
-            }
-          }
-        },
-        () => { if (!cancelled) setFailed(true); }
-      );
-    }).catch(() => { if (!cancelled) setFailed(true); });
-
-    return () => { cancelled = true; };
-  }, [smiles, width, height]);
-
-  if (failed) return null;
+  // ── Fallback: ASCII structural drawing ──────────────────────────────────────
+  if (status === 'failed') {
+    if (!fallback) return null;
+    return (
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="bg-white border border-slate-300 rounded-xl px-8 py-5 w-full max-w-sm">
+          <pre className="font-mono text-sm text-slate-800 leading-relaxed whitespace-pre text-center">
+            {fallback}
+          </pre>
+        </div>
+        {label && <p className="text-xs text-slate-400 italic">{label}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <div className="rounded-xl overflow-hidden border border-slate-600/40 shadow-sm">
-        <canvas
-          ref={canvasRef}
-          width={width}
-          height={height}
-          style={{ background: '#ffffff', display: 'block' }}
-        />
+      <div
+        className="rounded-xl overflow-hidden border border-slate-300/30 bg-white flex items-center justify-center"
+        style={{ width: size, height: size }}
+      >
+        {status === 'loading' ? (
+          <div className="w-full h-full animate-pulse bg-slate-100" />
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={label ?? smiles} width={size} height={size} />
+        )}
       </div>
       {label && <p className="text-xs text-slate-400 italic">{label}</p>}
     </div>

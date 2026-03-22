@@ -328,8 +328,8 @@ export default function ArrowPushingDrillPage() {
           <MoleculeViewer
             smiles={currentQ.smiles}
             label={currentQ.smilesLabel}
-            width={300}
-            height={200}
+            fallback={currentQ.structural}
+            size={280}
           />
         </div>
 

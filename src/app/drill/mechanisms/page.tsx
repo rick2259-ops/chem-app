@@ -1450,8 +1450,7 @@ export default function MechanismDrillPage() {
             <MoleculeViewer
               smiles={currentQ.smiles}
               label={currentQ.smilesLabel}
-              width={300}
-              height={200}
+              size={280}
             />
           </div>
         )}
