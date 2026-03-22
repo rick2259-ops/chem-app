@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt, buildQuizGenerationPrompt } from '@/lib/claude/prompts';
+import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt, buildQuizGenerationPrompt, buildMechanismPracticePrompt } from '@/lib/claude/prompts';
 import { TutorContext, ChatMessage } from '@/types/tutor';
 
 const client = new Anthropic({
@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
       quizCourseId,
       quizDescription,
       quizExistingPrompts,
+      mechanismPracticeMode,
+      mechanismPracticeMechanisms,
       synthesisMode,
       synthesisCourseId,
       synthesisdifficulty,
@@ -69,6 +71,8 @@ export async function POST(req: NextRequest) {
       quizCourseId?: string;
       quizDescription?: string;
       quizExistingPrompts?: string[];
+      mechanismPracticeMode?: boolean;
+      mechanismPracticeMechanisms?: { name: string; overview: string }[];
       synthesisMode?: boolean;
       synthesisCourseId?: string;
       synthesisdifficulty?: 'easy' | 'medium' | 'hard';
@@ -90,6 +94,29 @@ export async function POST(req: NextRequest) {
       });
       const text = response.content[0].type === 'text' ? response.content[0].text : '[]';
       return new Response(text, { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Mechanism practice problem generation
+    if (mechanismPracticeMode && mechanismPracticeMechanisms && mechanismPracticeMechanisms.length > 0) {
+      try {
+        // Cap overview length to keep prompt manageable
+        const trimmed = mechanismPracticeMechanisms.map(m => ({
+          name: m.name,
+          overview: m.overview.slice(0, 200),
+        }));
+        const prompt = buildMechanismPracticePrompt(trimmed, generateCount ?? 5);
+        const response = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 3000,
+          messages: [{ role: 'user', content: prompt }],
+        });
+        const text = response.content[0].type === 'text' ? response.content[0].text : '[]';
+        return new Response(text, { headers: { 'Content-Type': 'application/json' } });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Mechanism practice generation error:', msg);
+        return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+      }
     }
 
     // Synthesis problem generation

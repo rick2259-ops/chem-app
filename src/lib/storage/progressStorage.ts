@@ -1,4 +1,6 @@
 import { UserProgress, TopicScore, StudySession } from '@/types/progress';
+import { loadProgressFromSupabase, saveProgressToSupabase } from '@/lib/supabase/db';
+import { getAuthUserId } from '@/lib/supabase/auth';
 
 const STORAGE_KEY = 'ucr-chem-progress-v1';
 
@@ -40,6 +42,30 @@ export function saveProgress(progress: UserProgress): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   } catch (e) {
     console.error('Failed to save progress:', e);
+  }
+  // Background sync to Supabase — use auth UID if logged in
+  const authUid = getAuthUserId();
+  const syncProgress = authUid ? { ...progress, userId: authUid } : progress;
+  saveProgressToSupabase(syncProgress);
+}
+
+/**
+ * Call once on app boot to hydrate localStorage from Supabase.
+ * If Supabase has a newer record (more quiz attempts) it wins.
+ */
+export async function hydrateProgressFromSupabase(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const local = loadProgress();
+  const remote = await loadProgressFromSupabase(local.userId);
+  if (!remote) return;
+
+  // Prefer whichever has more study sessions (more complete data)
+  const localSessions = local.studySessions.length;
+  const remoteSessions = remote.studySessions.length;
+  if (remoteSessions > localSessions) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+    } catch { /* quota */ }
   }
 }
 

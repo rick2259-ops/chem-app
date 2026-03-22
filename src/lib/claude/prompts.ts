@@ -229,6 +229,55 @@ Rules for the solution array: number of objects must match numSteps exactly.
 The synthesis must be completable using reagents and reactions appropriate for ${courseId} at ${difficulty} difficulty.`;
 }
 
+export function buildMechanismPracticePrompt(
+  mechanisms: { name: string; overview: string }[],
+  count: number
+): string {
+  const mechList = mechanisms.map(m => `- ${m.name}: ${m.overview.slice(0, 250)}`).join('\n');
+  return `Generate ${count} exam-style organic chemistry practice problems for a UCR CHEM 008 student studying reaction mechanisms.
+
+MECHANISMS TO COVER:
+${mechList}
+
+Return ONLY a valid JSON array with exactly ${count} objects. No markdown, no explanation, just the array.
+
+Each object must have exactly these fields:
+{
+  "mechanismFocus": "name of the mechanism this question primarily tests",
+  "prompt": "exam question with specific substrate, reagent, and conditions (2-3 sentences)",
+  "options": ["option A", "option B", "option C", "option D"],
+  "correctIndex": 0,
+  "explanation": "3-4 sentences explaining why the answer is correct and why the others are wrong",
+  "stepAnswers": {
+    "substrate": "one of: primary | secondary | tertiary | alkene-alkyne | carbonyl | aromatic",
+    "reagent": "one of: nucleophile | base | electrophile | oxidant | reductant | acid-catalyst",
+    "conditions": "one of: polar-protic | polar-aprotic | nonpolar | acid-catalyst | heat | no-solvent",
+    "mechanism": "one of: SN2 | SN1 | E2 | E1 | electrophilic-addition | nucleophilic-addition | EAS | NAS | oxidation-reduction | diels-alder"
+  }
+}
+
+The stepAnswers field is critical — it identifies the key analysis step for each question:
+- substrate: the type of carbon/functional group that is reacting
+- reagent: the primary role of the reagent in the mechanism
+- conditions: the most mechanistically important condition (solvent type, catalyst, or temperature)
+- mechanism: the exact mechanism that operates
+
+Vary question types across the set:
+- Given substrate + reagent + solvent → identify which mechanism occurs
+- Given conditions → predict the major product or stereochemical outcome
+- Kinetics / rate-law clues → identify mechanism
+- Compare two mechanisms (e.g., why SN2 over SN1 for a primary substrate in DMSO)
+- Stereochemistry prediction (retention vs inversion, syn vs anti addition)
+- Effect of solvent, leaving group, or nucleophile strength on mechanism choice
+
+Rules:
+- Use real, specific reagents (NaOH, NaOMe, NaBH4, Br2/H2O, mCPBA, OsO4, etc.)
+- Wrong options must reflect genuine student misconceptions — not obviously wrong
+- Cover a variety of mechanisms from the list above
+- Vary difficulty from straightforward to multi-factor reasoning
+- stepAnswers values must be exactly one of the listed options — no other values allowed`;
+}
+
 export function buildQuizGenerationPrompt(
   topicTitle: string,
   courseId: string,
