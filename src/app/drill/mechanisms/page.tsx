@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import StructuralFormula from '@/components/drill/StructuralFormula';
+import MoleculeViewer from '@/components/drill/MoleculeViewer';
 import { allMechanisms } from '@/data/mechanisms';
 import MechanismCanvas from '@/components/mechanisms/MechanismCanvas';
 import { Mechanism, MechanismStep } from '@/types/mechanism';
@@ -48,7 +48,7 @@ interface PracticeQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
-  structural?: string;
+  smiles?: string;
   smilesLabel?: string;
   stepAnswers?: StepAnswers;
 }
@@ -1445,11 +1445,13 @@ export default function MechanismDrillPage() {
           </span>
         </div>
 
-        {currentQ.structural && (
-          <div className="mb-4">
-            <StructuralFormula
-              structural={currentQ.structural}
+        {currentQ.smiles && (
+          <div className="flex justify-center mb-4">
+            <MoleculeViewer
+              smiles={currentQ.smiles}
               label={currentQ.smilesLabel}
+              width={300}
+              height={200}
             />
           </div>
         )}

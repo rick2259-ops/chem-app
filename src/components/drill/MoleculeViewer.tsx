@@ -1,48 +1,67 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
   smiles: string;
+  label?: string;
   width?: number;
   height?: number;
-  label?: string;
 }
 
-export default function MoleculeViewer({ smiles, width = 300, height = 180, label }: Props) {
+export default function MoleculeViewer({ smiles, label, width = 300, height = 220 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     if (!canvasRef.current || !smiles) return;
     let cancelled = false;
+    setFailed(false);
 
     import('smiles-drawer').then((mod) => {
-      if (cancelled) return;
-      // smiles-drawer v2 exports the module as default or as named exports
+      if (cancelled || !canvasRef.current) return;
       const SD = (mod.default ?? mod) as any;
-      const drawer = new SD.Drawer({ width, height });
+
+      const drawer = new SD.Drawer({
+        width,
+        height,
+        bondThickness: 1.5,
+        fontSizeLarge: 15,
+        fontSizeSmall: 9,
+        padding: 24,
+        compactDrawing: false,
+      });
+
       SD.parse(
         smiles,
         (tree: any) => {
           if (!cancelled && canvasRef.current) {
-            drawer.draw(tree, canvasRef.current, 'dark', false);
+            try {
+              drawer.draw(tree, canvasRef.current, 'light', false);
+            } catch {
+              if (!cancelled) setFailed(true);
+            }
           }
         },
-        (err: unknown) => console.warn('MoleculeViewer:', err)
+        () => { if (!cancelled) setFailed(true); }
       );
-    }).catch((e) => console.warn('smiles-drawer load error:', e));
+    }).catch(() => { if (!cancelled) setFailed(true); });
 
     return () => { cancelled = true; };
   }, [smiles, width, height]);
 
+  if (failed) return null;
+
   return (
-    <div className="flex flex-col items-center gap-1">
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        className="rounded-lg bg-slate-900 border border-slate-700"
-      />
-      {label && <p className="text-xs text-slate-500 italic">{label}</p>}
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="rounded-xl overflow-hidden border border-slate-600/40 shadow-sm">
+        <canvas
+          ref={canvasRef}
+          width={width}
+          height={height}
+          style={{ background: '#ffffff', display: 'block' }}
+        />
+      </div>
+      {label && <p className="text-xs text-slate-400 italic">{label}</p>}
     </div>
   );
 }

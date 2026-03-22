@@ -248,7 +248,7 @@ Each object must have exactly these fields:
   "options": ["option A", "option B", "option C", "option D"],
   "correctIndex": 0,
   "explanation": "3-4 sentences explaining why the answer is correct and why the others are wrong",
-  "structural": "ASCII structural drawing of the key substrate, using — for bonds, ‖ for double bonds, | for vertical bonds (e.g. 'CH₃\\n |\\nCH₃ — C — Br\\n |\\nCH₃')",
+  "smiles": "valid SMILES string of the key substrate molecule in the question (e.g. 'CC(Br)CC' for 2-bromobutane, 'CC(C)(C)Br' for tert-butyl bromide)",
   "smilesLabel": "short molecule name shown under the structure (e.g. '2-bromobutane')",
   "stepAnswers": {
     "arrowFlow": {
@@ -285,7 +285,7 @@ Rules:
 - Vary difficulty from straightforward to multi-factor reasoning
 - stepAnswers values must be exactly one of the listed options — no other values allowed
 - arrowFlow must always be included — every mechanism problem has a key curved arrow
-- structural must be a clear ASCII line drawing using — (single bond), ‖ (double bond), | (vertical bond); keep it compact and centered`;
+- smiles must be a valid SMILES string for a simple, common organic molecule (avoid complex ring notation for non-aromatic rings; use standard atom symbols)`;
 }
 
 export function buildQuizGenerationPrompt(

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import StructuralFormula from '@/components/drill/StructuralFormula';
+import MoleculeViewer from '@/components/drill/MoleculeViewer';
 import {
   arrowQuestions,
   FROM_OPTIONS,
@@ -323,11 +323,13 @@ export default function ArrowPushingDrillPage() {
           </span>
         </div>
 
-        {/* Structural drawing */}
-        <div className="mb-4">
-          <StructuralFormula
-            structural={currentQ.structural}
+        {/* Molecule structure */}
+        <div className="flex justify-center mb-4">
+          <MoleculeViewer
+            smiles={currentQ.smiles}
             label={currentQ.smilesLabel}
+            width={300}
+            height={200}
           />
         </div>
 
