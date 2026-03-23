@@ -6,7 +6,7 @@ import MoleculeViewer from '@/components/drill/MoleculeViewer';
 import { allMechanisms } from '@/data/mechanisms';
 import MechanismCanvas from '@/components/mechanisms/MechanismCanvas';
 import { Mechanism, MechanismStep } from '@/types/mechanism';
-import { loadProgress } from '@/lib/storage/progressStorage';
+import { loadProgress, addStudySession } from '@/lib/storage/progressStorage';
 import {
   loadDrillSessionFromSupabase,
   saveDrillSessionToSupabase,
@@ -189,7 +189,7 @@ function StepChallenge({
 }) {
   // Step 0 = arrowFlow (from → to). Steps 1–4 = STEP_DEFS.
   // currentStep: -1 = arrowFrom, 0 = arrowTo, 1..4 = STEP_DEFS[0..3]
-  const [phase, setPhase]             = useState<'arrow-from' | 'arrow-to' | 'steps'>('arrow-from');
+  const [phase, setPhase]             = useState<'arrow-from' | 'arrow-to' | 'steps'>('steps');
   const [arrowFromSel, setArrowFromSel] = useState<string | null>(null);
   const [arrowToSel, setArrowToSel]   = useState<string | null>(null);
   const [arrowFromRevealed, setArrowFromRevealed] = useState(false);
@@ -207,7 +207,7 @@ function StepChallenge({
   useEffect(() => {
     if (questionIndex !== prevIndex.current) {
       prevIndex.current = questionIndex;
-      setPhase('arrow-from');
+      setPhase('steps');
       setArrowFromSel(null); setArrowToSel(null);
       setArrowFromRevealed(false); setArrowToRevealed(false);
       setCurrentStep(0);
@@ -224,13 +224,6 @@ function StepChallenge({
       onComplete();
     }
   }, [stepAnswers, onComplete]);
-
-  // If stepAnswers has no arrowFlow, skip straight to steps phase
-  useEffect(() => {
-    if (stepAnswers && !stepAnswers.arrowFlow && phase === 'arrow-from') {
-      setPhase('steps');
-    }
-  }, [stepAnswers, phase]);
 
   if (!stepAnswers) return null;
 
@@ -251,7 +244,12 @@ function StepChallenge({
     const correct = value === stepAnswers.arrowFlow?.to;
     setArrowToSel(value);
     setArrowToRevealed(true);
-    setTimeout(() => setPhase('steps'), correct ? 1200 : 2000);
+    setTimeout(() => {
+      if (!completedRef.current) {
+        completedRef.current = true;
+        onComplete();
+      }
+    }, correct ? 1200 : 2000);
   };
 
   // ── STEP_DEFS handlers ──
@@ -267,7 +265,9 @@ function StepChallenge({
     setTimeout(() => {
       const nextStep = currentStep + 1;
       if (nextStep >= STEP_DEFS.length) {
-        if (!completedRef.current) {
+        if (hasArrowFlow) {
+          setPhase('arrow-from');
+        } else if (!completedRef.current) {
           completedRef.current = true;
           onComplete();
         }
@@ -289,9 +289,9 @@ function StepChallenge({
     (phase === 'steps' && revealed[stepDef?.key] ? 1 : 0);
 
   const currentStepNum =
-    phase === 'arrow-from' ? 1 :
-    phase === 'arrow-to'   ? 2 :
-    (hasArrowFlow ? 2 : 0) + currentStep + 1;
+    phase === 'steps'      ? currentStep + 1 :
+    phase === 'arrow-from' ? STEP_DEFS.length + 1 :
+    STEP_DEFS.length + 2;
 
   return (
     <div className="mb-4 rounded-xl overflow-hidden border border-slate-700/60 bg-slate-900/60">
@@ -330,9 +330,9 @@ function StepChallenge({
       )}
 
       {/* Completed STEP_DEFS summary pills */}
-      {phase === 'steps' && currentStep > 0 && (
+      {((phase === 'steps' && currentStep > 0) || phase === 'arrow-from' || phase === 'arrow-to') && (
         <div className="flex flex-wrap gap-2 px-4 pt-3">
-          {STEP_DEFS.slice(0, currentStep).map(s => {
+          {STEP_DEFS.slice(0, phase === 'steps' ? currentStep : STEP_DEFS.length).map(s => {
             const sel     = selections[s.key];
             const correct = sel === stepAnswers[s.key as keyof StepAnswers];
             const label   = s.options.find((o: { value: string; label: string }) => o.value === stepAnswers[s.key as keyof StepAnswers])?.label ?? stepAnswers[s.key as keyof StepAnswers];
@@ -352,7 +352,7 @@ function StepChallenge({
         <div className="px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base">⚡</span>
-            <span className="text-sm font-semibold text-white">Trace the Arrow — Step 0</span>
+            <span className="text-sm font-semibold text-white">Trace the Arrow — Final Step</span>
           </div>
           <p className="text-xs text-slate-400 mb-3">
             Electrons always flow from electron-rich → electron-poor.<br />
@@ -396,7 +396,7 @@ function StepChallenge({
         <div className="px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-base">⚡</span>
-            <span className="text-sm font-semibold text-white">Trace the Arrow — Step 0</span>
+            <span className="text-sm font-semibold text-white">Trace the Arrow — Final Step</span>
           </div>
           <p className="text-xs text-slate-400 mb-3">
             You identified the electron source. Now:<br />
@@ -879,15 +879,15 @@ function SetupScreen({
         {/* Question count */}
         <div className="mb-6">
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Questions</div>
-          <div className="flex gap-2">
-            {[5, 10, 15].map(n => (
-              <button key={n} onClick={() => setDrillCount(n)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  drillCount === n ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}>
-                {n}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={1}
+              value={drillCount}
+              onChange={e => setDrillCount(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-24 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm text-center focus:outline-none focus:border-violet-500"
+            />
+            <span className="text-xs text-slate-500">questions</span>
           </div>
         </div>
 
@@ -1002,6 +1002,7 @@ export default function MechanismDrillPage() {
   );
   const [generateError, setGenerateError] = useState('');
   const [stepsComplete, setStepsComplete] = useState(false);
+  const startTimeRef = useRef(Date.now());
 
   // Resume banner: holds a session found in Supabase that the user hasn't decided on yet
   const [pendingResume, setPendingResume] = useState<DrillSession | null>(null);
@@ -1077,6 +1078,7 @@ export default function MechanismDrillPage() {
   }, []);
 
   const handleStart = useCallback(async () => {
+    startTimeRef.current = Date.now();
     if (mode === 'step-explorer') {
       clearSession();
       const deck = buildStepDeck(selectedIds, drillCount);
@@ -1246,6 +1248,19 @@ export default function MechanismDrillPage() {
 
     const nextStep = () => {
       if (stepIndex + 1 >= stepDeck.length) {
+        const allAttempts = [...stepAttempts, { card: stepDeck[stepIndex], selectedIndex: selectedOption ?? -1, isCorrect: selectedOption === stepDeck[stepIndex].correctOptionIndex }];
+        const correct = allAttempts.filter(a => a.isCorrect).length;
+        const score = Math.round((correct / allAttempts.length) * 100);
+        const primaryCourseId = (allMechanisms.find(m => selectedIds.has(m.id))?.courseId ?? 'CHEM008A') as 'CHEM008A' | 'CHEM008B' | 'CHEM008C';
+        addStudySession({
+          id: Date.now().toString(),
+          date: new Date().toISOString().split('T')[0],
+          topicId: 'mechanism-drill',
+          courseId: primaryCourseId,
+          activityType: 'mechanism',
+          durationMinutes: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000)),
+          score,
+        });
         setState('complete');
       } else {
         setStepIndex(i => i + 1);
@@ -1410,6 +1425,19 @@ export default function MechanismDrillPage() {
 
   const nextPractice = () => {
     if (practiceIndex + 1 >= practiceQuestions.length) {
+      const allAttempts = [...practiceAttempts, { question: currentQ, selectedIndex: practiceSelected ?? -1, isCorrect: practiceSelected === currentQ.correctIndex }];
+      const correct = allAttempts.filter(a => a.isCorrect).length;
+      const score = Math.round((correct / allAttempts.length) * 100);
+      const primaryCourseId = (allMechanisms.find(m => selectedIds.has(m.id))?.courseId ?? 'CHEM008A') as 'CHEM008A' | 'CHEM008B' | 'CHEM008C';
+      addStudySession({
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        topicId: 'mechanism-drill',
+        courseId: primaryCourseId,
+        activityType: 'mechanism',
+        durationMinutes: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000)),
+        score,
+      });
       setState('complete');
     } else {
       setPracticeIndex(i => i + 1);

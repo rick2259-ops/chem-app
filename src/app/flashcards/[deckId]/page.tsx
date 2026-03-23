@@ -7,6 +7,7 @@ import { getDeck, getCardsForDeck } from '@/data/flashcards';
 import { getDueCards, reviewCard, createNewSRSCard } from '@/lib/srs/scheduler';
 import { useProgress } from '@/hooks/useProgress';
 import { useCustomCards } from '@/hooks/useCustomCards';
+import { addStudySession } from '@/lib/storage/progressStorage';
 import { Flashcard } from '@/types/flashcard';
 
 type Rating = 0 | 1 | 2 | 3;
@@ -115,7 +116,7 @@ function GenerateCardsPanel({ deck, existingCards, onGenerated }: {
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [count, setCount] = useState(5);
+  const [count, setCount] = useState(10);
   const [error, setError] = useState('');
   const [lastGenerated, setLastGenerated] = useState(0);
 
@@ -181,15 +182,13 @@ function GenerateCardsPanel({ deck, existingCards, onGenerated }: {
           </p>
           <div className="flex items-center gap-3 mb-3">
             <span className="text-slate-400 text-sm">How many cards?</span>
-            {[3, 5, 10].map(n => (
-              <button
-                key={n}
-                onClick={() => setCount(n)}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${count === n ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-              >
-                {n}
-              </button>
-            ))}
+            <input
+              type="number"
+              min={1}
+              value={count}
+              onChange={e => setCount(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-20 px-2 py-1 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm text-center focus:outline-none focus:border-violet-500"
+            />
           </div>
           {error && <p className="text-red-400 text-xs mb-2">{error}</p>}
           <button
@@ -291,6 +290,7 @@ export default function FlashcardStudyPage({
   const [isComplete, setIsComplete] = useState(false);
   const [studyCards, setStudyCards] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const startTimeRef = useRef(Date.now());
 
   const deck = getDeck(deckId);
   const staticCards = deck ? getCardsForDeck(deckId) : [];
@@ -348,6 +348,18 @@ export default function FlashcardStudyPage({
 
     setTimeout(() => {
       if (cardIndex + 1 >= studyCards.length) {
+        const allRatings = [...sessionRatings, rating];
+        const correct = allRatings.filter(r => r >= 2).length;
+        const score = allRatings.length > 0 ? Math.round((correct / allRatings.length) * 100) : 0;
+        addStudySession({
+          id: Date.now().toString(),
+          date: new Date().toISOString().split('T')[0],
+          topicId: deckId,
+          courseId: deck.courseId,
+          activityType: 'flashcards',
+          durationMinutes: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000)),
+          score,
+        });
         setIsComplete(true);
       } else {
         setCardIndex(prev => prev + 1);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Question } from '@/types/quiz';
 import { getQuestionsByCourse, getRandomQuestions } from '@/data/quizzes';
 import { CourseId } from '@/types/course';
+import { addStudySession } from '@/lib/storage/progressStorage';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -935,6 +936,8 @@ export default function ExamPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<ExamAnswer[]>([]);
   const [timeLimit, setTimeLimit] = useState<TimeLimitMinutes>(50);
+  const [selectedCourse, setSelectedCourse] = useState<CourseSelection>('CHEM008A');
+  const startTimeRef = useRef(Date.now());
 
   const handleStart = useCallback((
     course: CourseSelection,
@@ -955,6 +958,8 @@ export default function ExamPage() {
     setQuestions(pool);
     setAnswers(buildAnswers(pool.length));
     setTimeLimit(limit);
+    setSelectedCourse(course);
+    startTimeRef.current = Date.now();
     setExamState('exam');
   }, []);
 
@@ -1005,6 +1010,19 @@ export default function ExamPage() {
 
     await Promise.all(gradingTasks);
     setAnswers(updatedAnswers);
+    const mcCorrect = questions.filter((q, i) => q.type !== 'short-answer' && updatedAnswers[i].selectedIndex === q.correctIndex).length;
+    const saCorrect = updatedAnswers.filter(a => a.aiResult?.isCorrect).length;
+    const examScore = Math.round(((mcCorrect + saCorrect) / questions.length) * 100);
+    const examCourseId = (selectedCourse === 'ALL' ? 'CHEM008A' : selectedCourse) as CourseId;
+    addStudySession({
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      topicId: 'exam',
+      courseId: examCourseId,
+      activityType: 'quiz',
+      durationMinutes: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000)),
+      score: examScore,
+    });
     setExamState('results');
   }, [questions, answers]);
 

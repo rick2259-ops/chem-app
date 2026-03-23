@@ -151,7 +151,7 @@ export function buildFlashcardGenerationPrompt(
   count: number,
   existingFronts: string[]
 ): string {
-  const existing = existingFronts.slice(0, 20).map((f, i) => `${i + 1}. ${f}`).join('\n');
+  const existing = existingFronts.slice(0, 80).map((f, i) => `${i + 1}. ${f}`).join('\n');
   return `Generate ${count} NEW organic chemistry flashcards for a UCR CHEM 008 student studying "${deckTitle}".
 
 DECK FOCUS: ${deckDescription}
@@ -293,15 +293,27 @@ export function buildQuizGenerationPrompt(
   courseId: string,
   description: string,
   count: number,
-  existingPrompts: string[]
+  existingPrompts: string[],
+  masteryMode = false
 ): string {
-  const existing = existingPrompts.slice(0, 30).map((p, i) => `${i + 1}. ${p}`).join('\n');
+  const existing = existingPrompts.slice(0, 80).map((p, i) => `${i + 1}. ${p}`).join('\n');
+  const masteryInstructions = masteryMode ? `
+MASTERY-BASED GENERATION (critical):
+The goal is to test understanding of the underlying principle, NOT memory of a specific answer.
+- Use DIFFERENT molecules, substrates, leaving groups, and solvents than typical textbook examples
+- Change stereochemistry, substituent positions, ring sizes, or functional groups to create novel scenarios
+- Include "apply the concept" questions: given a new substrate/condition, predict what happens and why
+- At least 2 questions should require multi-step reasoning (e.g., identify mechanism THEN predict stereochemistry)
+- Questions must be answerable by a student who deeply understands the concept — not by one who memorized past answers
+` : '';
   return `Generate ${count} NEW practice quiz questions for a UCR ${courseId} student studying "${topicTitle}".
 
 TOPIC DESCRIPTION: ${description}
-
-ALREADY COVERED (do NOT duplicate these questions):
+${masteryInstructions}
+ALREADY COVERED — do NOT repeat, rephrase, or ask the same concept as any of these:
 ${existing || 'None yet'}
+
+Your new questions MUST test different specific concepts, reactions, or scenarios not already covered above. Even if the topic overlaps, the tested knowledge must be distinct.
 
 Return ONLY a valid JSON array with exactly ${count} objects. No markdown, no explanation, just the array.
 
@@ -322,6 +334,29 @@ Rules:
 - Questions must be exam-relevant for UCR CHEM 008 level
 - For multiple-choice: plausible distractors that test common misconceptions
 - Explanations should teach, not just restate the answer`;
+}
+
+export function buildInsightsPrompt(summary: string): string {
+  return `You are a study coach for a UCR organic chemistry student (CHEM 008A/B/C). Analyze their performance data and give specific, actionable advice.
+
+STUDENT PERFORMANCE DATA:
+${summary}
+
+Write a concise coaching report. Use this exact structure:
+
+## What You're Doing Well
+1-2 genuine strengths based on the data (be specific, not generic praise).
+
+## Priority Focus Areas
+For each weak area, give ONE specific technique or tip they can apply TODAY. Be concrete — name actual reactions, mechanisms, or study methods.
+
+## Recommended Study Plan for Next Session
+A 3-step sequence (e.g., "Start with X for 15 min → then Y → finish with Z"). Tailor it to their weakest areas.
+
+## One Key Insight
+A single observation about their study pattern that might be holding them back or accelerating their progress.
+
+Keep the entire response under 300 words. Be direct and specific — no filler.`;
 }
 
 export function buildGradingPrompt(

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import { addStudySession } from '@/lib/storage/progressStorage';
 import Link from 'next/link';
 import MoleculeViewer from '@/components/drill/MoleculeViewer';
 import {
@@ -62,6 +63,7 @@ export default function ArrowPushingDrillPage() {
   const [deck, setDeck]             = useState<ArrowQuestion[]>([]);
   const [index, setIndex]           = useState(0);
   const [attempts, setAttempts]     = useState<Attempt[]>([]);
+  const startTimeRef = useRef(Date.now());
 
   // Per-question state
   const [selectedFrom, setSelectedFrom] = useState<FromValue | null>(null);
@@ -72,6 +74,7 @@ export default function ArrowPushingDrillPage() {
   const currentQ = deck[index];
 
   const handleStart = useCallback(() => {
+    startTimeRef.current = Date.now();
     const filtered = shuffle(arrowQuestions).slice(0, count);
     setDeck(filtered);
     setIndex(0);
@@ -109,6 +112,18 @@ export default function ArrowPushingDrillPage() {
 
   const handleNext = useCallback(() => {
     if (index + 1 >= deck.length) {
+      const allAttempts = [...attempts];
+      const correct = allAttempts.filter(a => a.fromCorrect && a.toCorrect).length;
+      const score = allAttempts.length > 0 ? Math.round((correct / allAttempts.length) * 100) : 0;
+      addStudySession({
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        topicId: 'arrow-pushing-drill',
+        courseId: 'CHEM008A',
+        activityType: 'mechanism',
+        durationMinutes: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000)),
+        score,
+      });
       setPhase('complete');
     } else {
       setIndex(i => i + 1);
@@ -171,15 +186,16 @@ export default function ArrowPushingDrillPage() {
 
           <div className="mb-6">
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Questions</p>
-            <div className="flex gap-2 justify-center">
-              {[8, 12, 16].map(n => (
-                <button key={n} onClick={() => setCount(n)}
-                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    count === n ? 'bg-violet-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}>
-                  {n}
-                </button>
-              ))}
+            <div className="flex items-center justify-center gap-3">
+              <input
+                type="number"
+                min={1}
+                max={arrowQuestions.length}
+                value={count}
+                onChange={e => setCount(Math.min(arrowQuestions.length, Math.max(1, parseInt(e.target.value) || 1)))}
+                className="w-24 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm text-center focus:outline-none focus:border-violet-500"
+              />
+              <span className="text-xs text-slate-500">questions (max {arrowQuestions.length} in bank)</span>
             </div>
           </div>
 

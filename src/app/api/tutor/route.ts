@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt, buildQuizGenerationPrompt, buildMechanismPracticePrompt } from '@/lib/claude/prompts';
+import { buildSystemPrompt, buildGradingPrompt, buildLecturePrompt, buildFlashcardRealLifePrompt, buildFlashcardMiniLecturePrompt, buildFlashcardGenerationPrompt, buildSynthesisPrompt, buildQuizGenerationPrompt, buildMechanismPracticePrompt, buildInsightsPrompt } from '@/lib/claude/prompts';
 import { TutorContext, ChatMessage } from '@/types/tutor';
 
 const client = new Anthropic({
@@ -38,11 +38,14 @@ export async function POST(req: NextRequest) {
       quizCourseId,
       quizDescription,
       quizExistingPrompts,
+      quizMasteryMode,
       mechanismPracticeMode,
       mechanismPracticeMechanisms,
       synthesisMode,
       synthesisCourseId,
       synthesisdifficulty,
+      insightsMode,
+      insightsSummary,
     } = body as {
       messages?: ChatMessage[];
       context?: TutorContext;
@@ -71,11 +74,14 @@ export async function POST(req: NextRequest) {
       quizCourseId?: string;
       quizDescription?: string;
       quizExistingPrompts?: string[];
+      quizMasteryMode?: boolean;
       mechanismPracticeMode?: boolean;
       mechanismPracticeMechanisms?: { name: string; overview: string }[];
       synthesisMode?: boolean;
       synthesisCourseId?: string;
       synthesisdifficulty?: 'easy' | 'medium' | 'hard';
+      insightsMode?: boolean;
+      insightsSummary?: string;
     };
 
     // Quiz question generation
@@ -85,11 +91,12 @@ export async function POST(req: NextRequest) {
         quizCourseId,
         quizDescription,
         generateCount ?? 5,
-        quizExistingPrompts ?? []
+        quizExistingPrompts ?? [],
+        quizMasteryMode ?? false
       );
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
+        max_tokens: Math.min(64000, (generateCount ?? 5) * 300 + 500),
         messages: [{ role: 'user', content: prompt }],
       });
       const text = response.content[0].type === 'text' ? response.content[0].text : '[]';
@@ -107,7 +114,7 @@ export async function POST(req: NextRequest) {
         const prompt = buildMechanismPracticePrompt(trimmed, generateCount ?? 5);
         const response = await client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 3000,
+          max_tokens: Math.min(64000, (generateCount ?? 5) * 450 + 600),
           messages: [{ role: 'user', content: prompt }],
         });
         const text = response.content[0].type === 'text' ? response.content[0].text : '[]';
@@ -117,6 +124,26 @@ export async function POST(req: NextRequest) {
         console.error('Mechanism practice generation error:', msg);
         return new Response(JSON.stringify({ error: msg }), { status: 500, headers: { 'Content-Type': 'application/json' } });
       }
+    }
+
+    // AI Study Insights
+    if (insightsMode && insightsSummary) {
+      const prompt = buildInsightsPrompt(insightsSummary);
+      const stream = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: prompt }],
+        stream: true,
+      });
+      const readable = new ReadableStream({
+        async start(controller) {
+          for await (const event of stream)
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta')
+              controller.enqueue(new TextEncoder().encode(event.delta.text));
+          controller.close();
+        },
+      });
+      return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
 
     // Synthesis problem generation
@@ -141,7 +168,7 @@ export async function POST(req: NextRequest) {
       );
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        max_tokens: Math.min(64000, (generateCount ?? 5) * 180 + 300),
         messages: [{ role: 'user', content: prompt }],
       });
       const text = response.content[0].type === 'text' ? response.content[0].text : '[]';

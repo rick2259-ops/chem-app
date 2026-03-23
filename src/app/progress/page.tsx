@@ -1,8 +1,132 @@
 'use client';
 import Link from 'next/link';
+import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useProgress } from '@/hooks/useProgress';
 import { courses } from '@/data/courses';
 import { getCourseProgress } from '@/lib/utils/weakAreaDetection';
+import { UserProgress, WeakArea } from '@/types/progress';
+
+function buildProgressSummary(progress: UserProgress, weakAreas: WeakArea[]): string {
+  const topicCount = Object.keys(progress.topicScores).length;
+  const avgScore = topicCount > 0
+    ? Math.round(Object.values(progress.topicScores).reduce((s, t) => s + t.averageScore, 0) / topicCount)
+    : 0;
+  const recentSessions = progress.studySessions.slice(-10);
+  const activityBreakdown = recentSessions.reduce<Record<string, number>>((acc, s) => {
+    acc[s.activityType] = (acc[s.activityType] ?? 0) + 1;
+    return acc;
+  }, {});
+  const weakList = weakAreas.slice(0, 5).map(w =>
+    `- ${w.topicTitle} (${w.reason.replace(/-/g, ' ')}${w.averageScore > 0 ? `, score: ${w.averageScore}%` : ''})`
+  ).join('\n');
+  const recentList = recentSessions.slice(0, 5).map(s =>
+    `- ${s.activityType} on ${s.topicId.replace(/-/g, ' ')} [${s.date}]${s.score != null ? ` — ${s.score}%` : ''}`
+  ).join('\n');
+
+  return `Total study sessions: ${progress.studySessions.length}
+Study streak: ${progress.studyStreak.currentStreak} days (best: ${progress.studyStreak.longestStreak})
+Topics studied: ${topicCount}
+Overall average score: ${avgScore}%
+
+Activity breakdown (last 10 sessions):
+${Object.entries(activityBreakdown).map(([k, v]) => `- ${k}: ${v} sessions`).join('\n') || 'None yet'}
+
+Weak/priority areas:
+${weakList || 'None detected yet'}
+
+Recent activity:
+${recentList || 'No recent sessions'}`;
+}
+
+function StudyCoach({ progress, weakAreas }: { progress: UserProgress; weakAreas: WeakArea[] }) {
+  const [text, setText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const handleAnalyze = async () => {
+    setIsLoading(true);
+    setText('');
+    try {
+      const summary = buildProgressSummary(progress, weakAreas);
+      const res = await fetch('/api/tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ insightsMode: true, insightsSummary: summary }),
+      });
+      if (!res.body) throw new Error();
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        setText(acc);
+      }
+      setHasLoaded(true);
+    } catch {
+      setText('Could not generate analysis. Please check your API key.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-slate-800 rounded-xl border border-indigo-500/30 p-6 mt-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-lg font-semibold text-white">AI Study Coach</h2>
+          <p className="text-slate-400 text-xs mt-0.5">Personalized analysis based on your activity</p>
+        </div>
+        <button
+          onClick={handleAnalyze}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white text-sm font-medium transition-colors"
+        >
+          {isLoading ? (
+            <>
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>{hasLoaded ? '↻ Refresh Analysis' : '✦ Get AI Analysis'}</>
+          )}
+        </button>
+      </div>
+
+      {!text && !isLoading && (
+        <div className="text-center py-8 text-slate-500 text-sm">
+          Click "Get AI Analysis" to receive personalized study advice based on your performance data.
+        </div>
+      )}
+
+      {(text || isLoading) && (
+        <div className="text-sm leading-relaxed">
+          {isLoading && !text && (
+            <div className="flex items-center gap-2 text-slate-400 text-xs mb-2">
+              <div className="w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              Generating your personalized coaching report...
+            </div>
+          )}
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              h2: ({ children }) => <h2 className="text-white font-semibold text-sm mt-4 mb-1.5 first:mt-0">{children}</h2>,
+              p: ({ children }) => <p className="text-slate-300 mb-2 last:mb-0">{children}</p>,
+              ul: ({ children }) => <ul className="space-y-1 mb-2">{children}</ul>,
+              ol: ({ children }) => <ol className="space-y-1 mb-2 list-decimal list-inside">{children}</ol>,
+              li: ({ children }) => <li className="flex gap-1.5 text-slate-300"><span className="text-indigo-400 flex-shrink-0">•</span><span>{children}</span></li>,
+              strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+            }}
+          >{text}</ReactMarkdown>
+          {isLoading && <span className="inline-block w-1.5 h-3.5 bg-indigo-400 animate-pulse ml-0.5 align-middle" />}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const courseConfig = {
   CHEM008A: { label: 'CHEM 008A', bar: 'bg-blue-500', badge: 'bg-blue-600', border: 'border-blue-500/30' },
@@ -289,6 +413,8 @@ export default function ProgressPage() {
           )}
         </div>
       </div>
+
+      <StudyCoach progress={progress} weakAreas={weakAreas} />
     </div>
   );
 }

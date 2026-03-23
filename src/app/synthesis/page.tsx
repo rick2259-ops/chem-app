@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { addStudySession } from '@/lib/storage/progressStorage';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -143,6 +144,7 @@ export default function SynthesisPage() {
   const [recentProblems, setRecentProblems] = useState<SavedProblem[]>([]);
   const [savedPanelOpen, setSavedPanelOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const startTimeRef = useRef(Date.now());
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -189,6 +191,7 @@ export default function SynthesisPage() {
       setProblem(parsed);
       setActiveCourse(selectedCourse);
       setActiveDifficulty(selectedDifficulty);
+      startTimeRef.current = Date.now();
       setAppState('problem');
 
       // Save to recent (last 5)
@@ -218,6 +221,17 @@ export default function SynthesisPage() {
 
   function showSolution() {
     setSolutionRevealed(true);
+    const courseIdMap: Record<CourseId, 'CHEM008A' | 'CHEM008B' | 'CHEM008C'> = {
+      '008A': 'CHEM008A', '008B': 'CHEM008B', '008C': 'CHEM008C',
+    };
+    addStudySession({
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      topicId: 'synthesis',
+      courseId: courseIdMap[activeCourse],
+      activityType: 'mechanism',
+      durationMinutes: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 60000)),
+    });
     setAppState('solution');
   }
 

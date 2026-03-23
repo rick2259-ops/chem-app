@@ -7,6 +7,7 @@ import { getQuizQuestions } from '@/data/quizzes';
 import { getTopic } from '@/data/courses';
 import { useQuizSession } from '@/hooks/useQuizSession';
 import { useCustomQuestions } from '@/hooks/useCustomQuestions';
+import { useProgress } from '@/hooks/useProgress';
 import { Question } from '@/types/quiz';
 import { CourseId } from '@/types/course';
 
@@ -133,55 +134,65 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
   const topic = getTopic(topicId);
   const baseQuestions = getQuizQuestions(topicId);
   const { customQuestions, addQuestions, clearQuestions } = useCustomQuestions(topicId);
+  const { progress } = useProgress();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState('');
+  const [generateCount, setGenerateCount] = useState(10);
+  const [freshQuestions, setFreshQuestions] = useState<Question[]>([]);
+  const [sessionMode, setSessionMode] = useState<'saved' | 'fresh'>('saved');
 
-  const questions = useMemo(
+  const savedQuestions = useMemo(
     () => [...baseQuestions, ...customQuestions],
     [baseQuestions, customQuestions]
   );
 
-  async function handleGenerate() {
+  const questions = sessionMode === 'fresh' && freshQuestions.length > 0
+    ? freshQuestions
+    : savedQuestions;
+
+  async function generateQuestions(masteryMode: boolean): Promise<Question[]> {
+    if (!topic) return [];
+    const existingPrompts = savedQuestions.map(q => q.prompt);
+    const res = await fetch('/api/tutor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quizGenerateMode: true,
+        quizTopicTitle: topic.title,
+        quizCourseId: topic.courseId,
+        quizDescription: topic.description,
+        generateCount,
+        quizExistingPrompts: existingPrompts,
+        quizMasteryMode: masteryMode,
+      }),
+    });
+    if (!res.ok) throw new Error('API error');
+    const raw: Array<{
+      type: string; difficulty: number; prompt: string;
+      options?: string[]; correctIndex?: number;
+      correctAnswer?: string; explanation: string;
+    }> = await res.json();
+    return raw.map((q, i) => ({
+      id: `session-${topicId}-${Date.now()}-${i}`,
+      topicId,
+      courseId: topic.courseId as CourseId,
+      type: q.type === 'short-answer' ? 'short-answer' : 'multiple-choice',
+      difficulty: ([1, 2, 3].includes(q.difficulty) ? q.difficulty : 2) as 1 | 2 | 3,
+      prompt: q.prompt,
+      options: q.options,
+      correctIndex: q.correctIndex,
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation,
+      tags: [],
+    }));
+  }
+
+  async function handleAddToBank() {
     if (!topic) return;
     setIsGenerating(true);
     setGenerateError('');
     try {
-      const existingPrompts = questions.map(q => q.prompt);
-      const res = await fetch('/api/tutor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quizGenerateMode: true,
-          quizTopicTitle: topic.title,
-          quizCourseId: topic.courseId,
-          quizDescription: topic.description,
-          generateCount: 5,
-          quizExistingPrompts: existingPrompts,
-        }),
-      });
-      if (!res.ok) throw new Error('API error');
-      const raw: Array<{
-        type: string;
-        difficulty: number;
-        prompt: string;
-        options?: string[];
-        correctIndex?: number;
-        correctAnswer?: string;
-        explanation: string;
-      }> = await res.json();
-      const newQuestions: Question[] = raw.map((q, i) => ({
-        id: `custom-${topicId}-${Date.now()}-${i}`,
-        topicId,
-        courseId: topic.courseId as CourseId,
-        type: q.type === 'short-answer' ? 'short-answer' : 'multiple-choice',
-        difficulty: ([1, 2, 3].includes(q.difficulty) ? q.difficulty : 2) as 1 | 2 | 3,
-        prompt: q.prompt,
-        options: q.options,
-        correctIndex: q.correctIndex,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        tags: [],
-      }));
+      const newQuestions = await generateQuestions(false);
       addQuestions(newQuestions);
     } catch {
       setGenerateError('Could not generate questions. Check your connection and try again.');
@@ -189,6 +200,31 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
       setIsGenerating(false);
     }
   }
+
+  const pendingFreshStart = useRef(false);
+
+  async function handleFreshPractice() {
+    if (!topic) return;
+    setIsGenerating(true);
+    setGenerateError('');
+    try {
+      const newQuestions = await generateQuestions(true);
+      setFreshQuestions(newQuestions);
+      setSessionMode('fresh');
+      pendingFreshStart.current = true;
+    } catch {
+      setGenerateError('Could not generate questions. Check your connection and try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  useEffect(() => {
+    if (pendingFreshStart.current && sessionMode === 'fresh' && freshQuestions.length > 0) {
+      pendingFreshStart.current = false;
+      start();
+    }
+  }, [sessionMode, freshQuestions, start]);
 
   const {
     state, currentQuestion, currentIndex, totalQuestions,
@@ -223,79 +259,102 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
 
   // ── Idle / Start screen ──────────────────────────────────────────────
   if (state === 'idle') {
+    const topicScore = progress?.topicScores?.[topicId];
+    const masteryLevel = topicScore?.masteryLevel ?? 'not-started';
+    const masteryColors: Record<string, string> = {
+      'mastered': 'text-green-400 bg-green-500/10 border-green-500/30',
+      'proficient': 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+      'developing': 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
+      'novice': 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+      'not-started': 'text-slate-400 bg-slate-700 border-slate-600',
+    };
+    const masteryLabels: Record<string, string> = {
+      'mastered': 'Mastered', 'proficient': 'Proficient',
+      'developing': 'Developing', 'novice': 'Novice', 'not-started': 'Not started',
+    };
+
     return (
       <div className="flex items-center justify-center min-h-screen p-8">
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-10 max-w-md w-full text-center">
-          <div className="text-5xl mb-4">✏️</div>
-          <h1 className="text-2xl font-bold text-white mb-2">{topic.title}</h1>
-          <p className="text-slate-400 text-sm mb-4">{topic.description}</p>
-          <div className="flex items-center justify-center gap-4 text-sm text-slate-500 mb-6">
-            <span>{questions.length} questions</span>
-            <span>·</span>
-            <span>{questions.filter(q => q.type === 'multiple-choice').length} MC</span>
-            {questions.filter(q => q.type === 'short-answer').length > 0 && (
-              <><span>·</span><span>{questions.filter(q => q.type === 'short-answer').length} free response</span></>
-            )}
+        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 max-w-md w-full">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-3">✏️</div>
+            <h1 className="text-2xl font-bold text-white mb-1">{topic.title}</h1>
+            <p className="text-slate-400 text-sm mb-3">{topic.description}</p>
+            <span className={`inline-block text-xs font-semibold px-3 py-1 rounded-full border ${masteryColors[masteryLevel]}`}>
+              {masteryLabels[masteryLevel]}
+              {topicScore && ` · ${topicScore.averageScore}% avg · ${topicScore.quizAttempts} session${topicScore.quizAttempts !== 1 ? 's' : ''}`}
+            </span>
           </div>
 
           {/* New to this topic? */}
-          <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 mb-6 text-left">
-            <div className="text-amber-300 text-xs font-semibold mb-1">📖 New to this topic?</div>
-            <p className="text-slate-400 text-xs leading-relaxed mb-2">
-              Read the lecture first — it explains everything from scratch before you test yourself.
-            </p>
-            <Link
-              href={`/lecture/${topicId}`}
-              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white rounded-lg transition-colors font-medium"
-            >
-              📖 Read Lecture First
-            </Link>
+          {masteryLevel === 'not-started' && (
+            <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 mb-4 text-left">
+              <div className="text-amber-300 text-xs font-semibold mb-1">📖 New to this topic?</div>
+              <p className="text-slate-400 text-xs leading-relaxed mb-2">
+                Read the lecture first — it explains everything from scratch before you test yourself.
+              </p>
+              <Link href={`/lecture/${topicId}`}
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white rounded-lg transition-colors font-medium">
+                📖 Read Lecture First
+              </Link>
+            </div>
+          )}
+
+          {/* Count selector */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs text-slate-400 whitespace-nowrap">Questions:</span>
+            <input
+              type="number" min={1} value={generateCount}
+              onChange={e => setGenerateCount(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-20 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm text-center focus:outline-none focus:border-blue-500"
+            />
+            <span className="text-xs text-slate-500">per session</span>
           </div>
 
-          <button
-            onClick={start}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-semibold text-lg transition-colors"
-          >
-            Start Quiz
+          {/* Primary CTA: Fresh Practice */}
+          <button onClick={handleFreshPractice} disabled={isGenerating}
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white font-semibold text-base transition-colors flex items-center justify-center gap-2 mb-2">
+            {isGenerating && sessionMode === 'fresh' ? (
+              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Generating fresh questions...</>
+            ) : (
+              <>⚡ Fresh Practice — New Questions Every Time</>
+            )}
           </button>
+          <p className="text-xs text-slate-500 text-center mb-4">
+            AI generates brand-new questions each session — prove you understand the concept, not just the answer.
+          </p>
 
-          {/* Generate more questions */}
-          <div className="mt-4 border-t border-slate-700 pt-4">
+          {/* Secondary: Saved bank */}
+          {savedQuestions.length > 0 && (
+            <button onClick={() => { setSessionMode('saved'); start(); }}
+              className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-white text-sm font-medium transition-colors mb-2">
+              Practice Saved Questions ({savedQuestions.length})
+            </button>
+          )}
+
+          {/* Add to bank */}
+          <div className="border-t border-slate-700/60 pt-4 mt-2">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-500">
-                {customQuestions.length > 0
-                  ? `+${customQuestions.length} AI-generated question${customQuestions.length !== 1 ? 's' : ''} added`
-                  : 'Want more practice?'}
-              </span>
+              <span className="text-xs text-slate-500">Question bank: {savedQuestions.length} saved</span>
               {customQuestions.length > 0 && (
-                <button
-                  onClick={clearQuestions}
-                  className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
-                >
-                  Remove
+                <button onClick={clearQuestions} className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
+                  Clear AI questions
                 </button>
               )}
             </div>
-            <button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating 5 more questions...
-                </>
+            <button onClick={handleAddToBank} disabled={isGenerating}
+              className="w-full py-2 bg-slate-700/60 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-slate-300 text-xs font-medium transition-colors flex items-center justify-center gap-2">
+              {isGenerating && sessionMode === 'saved' ? (
+                <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />Adding {generateCount} questions to bank...</>
               ) : (
-                <>+ Generate 5 More Practice Questions</>
+                <>+ Add {generateCount} Questions to Saved Bank</>
               )}
             </button>
-            {generateError && (
-              <p className="text-red-400 text-xs mt-2 text-center">{generateError}</p>
-            )}
           </div>
 
-          <Link href="/quiz" className="block mt-3 text-slate-400 hover:text-slate-300 text-sm transition-colors">
+          {generateError && <p className="text-red-400 text-xs mt-2 text-center">{generateError}</p>}
+
+          <Link href="/quiz" className="block mt-4 text-slate-400 hover:text-slate-300 text-sm transition-colors text-center">
             ← Back to Quizzes
           </Link>
         </div>
@@ -347,9 +406,9 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
           )}
 
           <div className="flex gap-3">
-            <button onClick={start}
+            <button onClick={() => { setFreshQuestions([]); setSessionMode('saved'); }}
               className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-medium transition-colors">
-              Retake Quiz
+              Practice Again
             </button>
             <Link href="/quiz"
               className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-white font-medium transition-colors text-center">
