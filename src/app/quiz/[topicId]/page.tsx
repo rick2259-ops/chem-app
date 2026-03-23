@@ -219,18 +219,18 @@ export default function QuizTopicPage({ params }: { params: Promise<{ topicId: s
     }
   }
 
+  const {
+    state, currentQuestion, currentIndex, totalQuestions,
+    attempts, selectedIndex, textAnswer, setTextAnswer,
+    aiFeedback, isGrading, score, start, submitMC, submitShortAnswer, next,
+  } = useQuizSession(questions, topicId, topic?.courseId ?? 'CHEM008A');
+
   useEffect(() => {
     if (pendingFreshStart.current && sessionMode === 'fresh' && freshQuestions.length > 0) {
       pendingFreshStart.current = false;
       start();
     }
   }, [sessionMode, freshQuestions, start]);
-
-  const {
-    state, currentQuestion, currentIndex, totalQuestions,
-    attempts, selectedIndex, textAnswer, setTextAnswer,
-    aiFeedback, isGrading, score, start, submitMC, submitShortAnswer, next,
-  } = useQuizSession(questions, topicId, topic?.courseId ?? 'CHEM008A');
 
   if (!topic) {
     return (
